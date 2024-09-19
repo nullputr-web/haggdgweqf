@@ -1688,16 +1688,16 @@ function Library:__CreateMainUI()
 		Parent = AlaskaUI;
 	})
 
-	local UiContainer = Create("Frame", {
-		BackgroundTransparency = 1;
-		BorderSizePixel = 0;
-		Position = UDim2.new(0.175, 0, 0.186, 0);
-        Size = UDim2.new(0, 780, 0, 760);  -- Increased width and height
-		Name = "Container";
-		Parent = AlaskaUI;
-		Draggable = true;
-		Active = true;
-	})
+    local UiContainer = Create("Frame", {
+        BackgroundTransparency = 1;
+        BorderSizePixel = 0;
+        Position = UDim2.new(0.175, 0, 0.186, 0);
+        Size = UDim2.new(0, 790, 0, 710);  -- Increased size for both width and height
+        Name = "Container";
+        Parent = AlaskaUI;
+        Draggable = true;
+        Active = true;
+    })
 
 	local OuterStroke = Create("UIStroke", {
 		Color = Theme.Accent;
