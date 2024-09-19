@@ -1692,7 +1692,7 @@ function Library:__CreateMainUI()
         BackgroundTransparency = 1;
         BorderSizePixel = 0;
         Position = UDim2.new(0.175, 0, 0.186, 0);
-        Size = UDim2.new(0, 800, 0, 650);  -- Slightly narrower while keeping the height the same
+        Size = UDim2.new(0, 800, 0, 500);  -- Slightly narrower while keeping the height the same
 
 
         Name = "Container";
