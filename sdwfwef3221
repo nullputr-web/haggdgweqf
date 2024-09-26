@@ -1688,19 +1688,16 @@ function Library:__CreateMainUI()
 		Parent = AlaskaUI;
 	})
 
-    local UiContainer = Create("Frame", {
-        BackgroundTransparency = 1;
-        BorderSizePixel = 0;
-        Position = UDim2.new(0.175, 0, 0.186, 0);
-        Size = UDim2.new(0, 800, 0, 700);  -- Larger size to match the UI in the screenshot
-
-
-
-        Name = "Container";
-        Parent = AlaskaUI;
-        Draggable = true;
-        Active = true;
-    })
+	local UiContainer = Create("Frame", {
+		BackgroundTransparency = 1;
+		BorderSizePixel = 0;
+		Position = UDim2.new(0.175, 0, 0.186, 0);
+		Size = UDim2.new(0, 700, 0, 565);
+		Name = "Container";
+		Parent = AlaskaUI;
+		Draggable = true;
+		Active = true;
+	})
 
 	local OuterStroke = Create("UIStroke", {
 		Color = Theme.Accent;
@@ -1965,5 +1962,139 @@ function Library.new(Data)
 
 	return self
 end
+
+
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Services = setmetatable({}, {
+	__index = function(self, Index)
+		local Value = game.GetService(game, Index)
+		rawset(self, Index, Value)
+		return Value
+	end
+})
+Services.UIParent = Services.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local Library = {
+	Util = {};
+	Theme = {};
+	Objects = {};
+	ObjectCache = {};
+	Tabs = { Skeletons = {}; };
+	Tweens = {};
+}
+
+Library.__index = Library
+Library.Tabs.__index = Library.Tabs
+
+-- Folder to store configs
+local ConfigFolder = Instance.new("Folder")
+ConfigFolder.Name = "Configs"
+ConfigFolder.Parent = ReplicatedStorage
+
+-- Function to create a config
+function Library:CreateConfig(configName, data)
+    local config = {
+        Name = configName;
+        Data = data;
+    }
+    return config
+end
+
+-- Function to save a config
+function Library:SaveConfig(config)
+    local configFileName = config.Name .. ".json"
+    local filePath = ConfigFolder:FindFirstChild(configFileName)
+    
+    if not filePath then
+        filePath = Instance.new("StringValue")
+        filePath.Name = configFileName
+        filePath.Parent = ConfigFolder
+    end
+
+    filePath.Value = HttpService:JSONEncode(config.Data)
+end
+
+-- Function to load a config
+function Library:LoadConfig(configName)
+    local configFileName = configName .. ".json"
+    local filePath = ConfigFolder:FindFirstChild(configFileName)
+
+    if filePath then
+        local data = HttpService:JSONDecode(filePath.Value)
+        return data
+    else
+        warn("Config file not found!")
+        return nil
+    end
+end
+
+-- Function to gather all current settings in the UI
+function Library:GetCurrentSettings()
+    local settings = {}
+
+    -- Iterate over each tab
+    for _, tab in pairs(self.Tabs) do
+        -- Iterate over each groupbox within the tab
+        for _, groupbox in pairs(tab.Groupboxes) do
+            -- Iterate over each UI element in the groupbox
+            for _, element in pairs(groupbox.Elements) do
+                if element.Flag then
+                    -- Save the value of each UI element in the settings table
+                    settings[element.Flag] = element.Value
+                end
+            end
+        end
+    end
+
+    return settings
+end
+
+-- Function to apply loaded settings to the UI
+function Library:ApplySettings(settings)
+    -- Iterate over each tab
+    for _, tab in pairs(self.Tabs) do
+        -- Iterate over each groupbox within the tab
+        for _, groupbox in pairs(tab.Groupboxes) do
+            -- Iterate over each UI element in the groupbox
+            for _, element in pairs(groupbox.Elements) do
+                if element.Flag and settings[element.Flag] ~= nil then
+                    -- Apply the saved value to the UI element
+                    element:SetValue(settings[element.Flag])
+                end
+            end
+        end
+    end
+end
+
+-- Add a new tab for the Config system
+local ConfigTab = Library.Tabs.new({
+    Title = "Config";
+    Icon = "rbxassetid://<your_icon_id>"; -- Replace with your own icon ID
+})
+
+-- Create a box to handle config creation
+local CreateConfigBox = ConfigTab:Groupbox({ Title = "Create Config", Side = 1 })
+CreateConfigBox:CreateObject(function(flag)
+    local configName = flag["ConfigName"]
+    local configData = Library:GetCurrentSettings() -- Gather all current UI settings
+    local config = Library:CreateConfig(configName, configData)
+    Library:SaveConfig(config)
+end, {
+    { Type = "Textbox", Text = "Config Name", Flag = "ConfigName" };
+})
+
+-- Create a box to handle config loading
+local LoadConfigBox = ConfigTab:Groupbox({ Title = "Load Config", Side = 2 })
+LoadConfigBox:CreateObject(function(flag)
+    local configName = flag["ConfigNameToLoad"]
+    local loadedData = Library:LoadConfig(configName)
+    if loadedData then
+        Library:ApplySettings(loadedData) -- Apply the loaded settings back to the UI
+    end
+end, {
+    { Type = "Textbox", Text = "Config Name", Flag = "ConfigNameToLoad" };
+})
+
 
 return Library
