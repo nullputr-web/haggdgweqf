@@ -282,22 +282,22 @@ local function CreateInformationFrame(self, Object)
         InformationFrame = self.ObjectCache[Object]
         Label = InformationFrame.Label
     else
-        -- Parent to PlayerGui to avoid CoreGui restrictions
+        -- Parent to PlayerGui
         InformationFrame = Create("Frame", {
             BackgroundColor3 = Theme.Background_2;
-            Position = UDim2.new(0, 93, 0, 335); -- Default position, will adjust dynamically
+            Position = UDim2.new(0, 93, 0, 335); -- Adjust the position dynamically as needed
             Size = UDim2.new(0, 250, 0, 0);
             ZIndex = 19;
             Name = "InformationFrame";
             BackgroundTransparency = 1;
-            Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui");  -- Use PlayerGui
+            Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui");  -- Use PlayerGui here instead of CoreGui
         })
 
-        -- UIStroke can now be applied because it's within PlayerGui
+        -- UIStroke now valid under PlayerGui
         local UIStroke = Create("UIStroke", {
             Color = Theme.Accent;
             Parent = InformationFrame;
-            Transparency = 1;
+            Transparency = 1; -- Optional: Adjust stroke transparency as needed
         })
 
         local UICorner = Create("UICorner", {
@@ -320,15 +320,15 @@ local function CreateInformationFrame(self, Object)
             ZIndex = 20;
             Name = "Label";
             Parent = InformationFrame;
-            TextTransparency = 1;
+            TextTransparency = 1; -- Optional: Adjust text transparency as needed
         })
     end
 
-    -- Dynamically update the frame position based on the mouse
+    -- Update the frame's position dynamically based on mouse
     local mousePos = game:GetService("UserInputService"):GetMouseLocation()
     InformationFrame.Position = UDim2.new(0, mousePos.X + 15, 0, mousePos.Y + 15)
 
-    -- Store the frame in cache
+    -- Cache the frame
     self.ObjectCache[Object] = InformationFrame
 
     return InformationFrame, Label
