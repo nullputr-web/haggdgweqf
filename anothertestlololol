@@ -276,50 +276,48 @@ local function LoadItemList(Dropdown, ItemList, Callback, IsSelectable)
 	return ButtonList
 end
 
-local function CreateInformationFrame(self, Object, Skeleton)
-	local InformationFrame, Label
-	if self.ObjectCache[Object] then
-		InformationFrame = self.ObjectCache[Object]
-		Label = InformationFrame.Label
-	else
-		InformationFrame = Create("Frame", {
-			BackgroundColor3 = Theme.Background_2;
-			Position = UDim2.new(0, 93, 0, 335);
-			Size = UDim2.new(0, 250, 0, 0);
-			ZIndex = 19;
-			Name = "InformationFrame";
-			BackgroundTransparency = 1;
-		})
+local function CreateInformationFrame(self, Object)
+    local InformationFrame, Label
+    if self.ObjectCache[Object] then
+        InformationFrame = self.ObjectCache[Object]
+        Label = InformationFrame.Label
+    else
+        -- Parent to CoreGui to avoid clipping
+        InformationFrame = Create("Frame", {
+            BackgroundColor3 = Theme.Background_2;
+            Position = UDim2.new(0, 93, 0, 335);
+            Size = UDim2.new(0, 250, 0, 0);
+            ZIndex = 19;
+            Name = "InformationFrame";
+            BackgroundTransparency = 1;
+            Parent = game.CoreGui;  -- This is the change
+        })
 
-		local UIStroke = Create("UIStroke", {
-			Color = Theme.Accent;
-			Parent = InformationFrame;
-			Transparency = 1;
-		})
+        -- Add other UI elements like stroke, corner, etc.
+        Label = Create("TextLabel", {
+            FontFace = Theme.Font_Regular;
+            RichText = true;
+            TextColor3 = Color3.new(1, 1, 1);
+            TextSize = 16;
+            TextWrapped = true;
+            TextXAlignment = Enum.TextXAlignment.Left;
+            TextYAlignment = Enum.TextYAlignment.Top;
+            BackgroundColor3 = Color3.new(1, 1, 1);
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, 5, 0, 5);
+            Size = UDim2.new(1, -10, 1, -10);
+            ZIndex = 20;
+            Name = "Label";
+            Parent = InformationFrame;
+            TextTransparency = 1;
+        })
+    end
 
-		local UICorner = Create("UICorner", {
-			CornerRadius = UDim.new(0, 4);
-			Parent = InformationFrame;
-		})
+    self.ObjectCache[Object] = InformationFrame
 
-		Label = Create("TextLabel", {
-			FontFace = Theme.Font_Regular;
-			RichText = true;
-			TextColor3 = Color3.new(1, 1, 1);
-			TextSize = 16;
-			TextWrapped = true;
-			TextXAlignment = Enum.TextXAlignment.Left;
-			TextYAlignment = Enum.TextYAlignment.Top;
-			BackgroundColor3 = Color3.new(1, 1, 1);
-			BackgroundTransparency = 1;
-			Position = UDim2.new(0, 5, 0, 5);
-			Size = UDim2.new(1, -10, 1, -10);
-			ZIndex = 20;
-			Name = "Label";
-			Parent = InformationFrame;
-			TextTransparency = 1;
-		})
-	end
+    return InformationFrame, Label
+end
+
 
 	InformationFrame.Parent = Skeleton
 	self.ObjectCache[Object] = InformationFrame
