@@ -276,28 +276,27 @@ local function LoadItemList(Dropdown, ItemList, Callback, IsSelectable)
 	return ButtonList
 end
 
-local function CreateInformationFrame(self, Object)
+local function CreateInformationFrame(self, Object, Skeleton)
     local InformationFrame, Label
     if self.ObjectCache[Object] then
         InformationFrame = self.ObjectCache[Object]
         Label = InformationFrame.Label
     else
-        -- Parent to PlayerGui
         InformationFrame = Create("Frame", {
             BackgroundColor3 = Theme.Background_2;
-            Position = UDim2.new(0, 93, 0, 335); -- Adjust the position dynamically as needed
+            Position = UDim2.new(0, 93, 0, 335);
             Size = UDim2.new(0, 250, 0, 0);
             ZIndex = 19;
             Name = "InformationFrame";
             BackgroundTransparency = 1;
-            Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui");  -- Use PlayerGui here instead of CoreGui
+            -- Add ClipsDescendants here
+            ClipsDescendants = false;  -- Ensure the text can go outside the frame
         })
 
-        -- UIStroke now valid under PlayerGui
         local UIStroke = Create("UIStroke", {
             Color = Theme.Accent;
             Parent = InformationFrame;
-            Transparency = 1; -- Optional: Adjust stroke transparency as needed
+            Transparency = 1;
         })
 
         local UICorner = Create("UICorner", {
@@ -320,20 +319,17 @@ local function CreateInformationFrame(self, Object)
             ZIndex = 20;
             Name = "Label";
             Parent = InformationFrame;
-            TextTransparency = 1; -- Optional: Adjust text transparency as needed
+            TextTransparency = 1;
+            -- Add ClipsDescendants here for the label as well
+            ClipsDescendants = false;  -- Ensure the text inside the label can overflow
         })
     end
 
-    -- Update the frame's position dynamically based on mouse
-    local mousePos = game:GetService("UserInputService"):GetMouseLocation()
-    InformationFrame.Position = UDim2.new(0, mousePos.X + 15, 0, mousePos.Y + 15)
-
-    -- Cache the frame
+    InformationFrame.Parent = Skeleton
     self.ObjectCache[Object] = InformationFrame
 
     return InformationFrame, Label
 end
-
 
 
 function CreateDropdownHolder(self, Object, Skeleton)
