@@ -289,8 +289,8 @@ local function CreateInformationFrame(self, Object, Skeleton)
             ZIndex = 19;
             Name = "InformationFrame";
             BackgroundTransparency = 1;
-            -- Add ClipsDescendants here
-            ClipsDescendants = false;  -- Ensure the text can go outside the frame
+            -- ClipsDescendants should be set to false to allow text to overflow outside the frame
+            ClipsDescendants = false;  
         })
 
         local UIStroke = Create("UIStroke", {
@@ -320,11 +320,14 @@ local function CreateInformationFrame(self, Object, Skeleton)
             Name = "Label";
             Parent = InformationFrame;
             TextTransparency = 1;
-            -- Add ClipsDescendants here for the label as well
-            ClipsDescendants = false;  -- Ensure the text inside the label can overflow
+            -- ClipsDescendants set to false for the label as well
+            ClipsDescendants = false;
         })
     end
 
+    -- Parent frame for InformationFrame might need ClipsDescendants = false
+    Skeleton.ClipsDescendants = false  -- Add this to ensure the Skeleton does not clip contents
+    
     InformationFrame.Parent = Skeleton
     self.ObjectCache[Object] = InformationFrame
 
