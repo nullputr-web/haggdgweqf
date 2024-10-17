@@ -319,12 +319,6 @@ local function CreateInformationFrame(self, Object)
 end
 
 
-	InformationFrame.Parent = Skeleton
-	self.ObjectCache[Object] = InformationFrame
-
-	return InformationFrame, Label
-end
-
 function CreateDropdownHolder(self, Object, Skeleton)
 	local Items, ItemHolder
 	if self.ObjectCache[Object] then
