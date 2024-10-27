@@ -592,7 +592,7 @@ end
 
 --// AK_LIBRARY DEF
 type AK_CORE_OBJECTS = {
-    AlaskaUI: ScreenGui;
+    AlaskaUI: ;
     Container: Frame;
     SkeletonSection: Frame;
     UiStroke: UIStroke;
@@ -2401,7 +2401,7 @@ local AK_LIBRARY = {} :: AK_LIBRARY_IMPL do
         local Theme = self.Theme;
         local Objects = self.Objects;
 
-        local AlaskaUI: ScreenGui = AK_CREATE("ScreenGui", {
+        local AlaskaUI:  = AK_CREATE("", {
 			Name = AK_RANDOM_STRING(16);
             Parent = self.Parent;
 
