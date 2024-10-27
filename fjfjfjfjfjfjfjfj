@@ -1,0 +1,2706 @@
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+type AK_ID = "BUTTON" | "SLIDER" | "TOGGLE" | "DROPDOWN" | "COLORPICKER" | "KEYBIND";
+export type AK_SIDE = "RIGHT" | "LEFT";
+
+type table<K, V> = { [K]: V }
+type array<K> = table<number, K>
+
+type AK_TWEEN = { Instance | TweenInfo | table<string, any> }
+type AK_ITEM_TYPE = ("Button" | "Slider" | "Toggle" | "Dropdown" | "Colorpicker" | "Keybind" | "Label" | "Information")
+
+export type AK_ITEM_BUTTON = {
+    Type: "Button";
+    LayoutOrder: number?;
+    Flag: string;
+    Icon: string?;
+}
+
+export type AK_ITEM_KEYBIND = {
+    Type: "Keybind";
+    LayoutOrder: number?;
+    Flag: string;
+    Bind: Enum.KeyCode;
+    MultiEvent: boolean?
+}
+
+export type AK_ITEM_TOGGLE = {
+    Type: "Toggle";
+    LayoutOrder: number?;
+    Flag: string;
+
+    Default: boolean?;
+}
+
+export type AK_ITEM_SLIDER = {
+    Type: "Slider";
+    LayoutOrder: number?;
+    Flag: string;
+
+    Default: number;
+    Min: number;
+    Max: number;
+    Precision: number?;
+    Format: string?;
+}
+
+export type AK_ITEM_LABEL = {
+    Type: "Label";
+    LayoutOrder: number?;
+    Flag: string;
+
+    Text: string;
+}
+
+export type AK_ITEM_INFORMATION = {
+    Type: "Label";
+    LayoutOrder: number?;
+    Flag: string;
+
+    Text: string;
+    Color: Color3?;
+}
+
+export type AK_ITEM_DROPDOWN = {
+    Type: "Dropdown";
+    LayoutOrder: number?;
+    Flag: string;
+    
+	Text: string;
+    Items: array<any>;
+	SelectMultiple: boolean?;
+	CloseAfterSelection: boolean?;
+}
+
+type AK_ITEM = AK_ITEM_BUTTON | AK_ITEM_TOGGLE | AK_ITEM_SLIDER | AK_ITEM_LABEL | AK_ITEM_INFORMATION
+
+type AK_DATA_BUTTON = {
+    Identifier: "BUTTON";
+    Flag: string;
+}
+
+type AK_DATA_SLIDER = {
+    Identifier: "SLIDER";
+    Flag: string;
+    Number: number;
+}
+
+type AK_DATA_TOGGLE = {
+    Identifier: "TOGGLE";
+    Flag: string;
+    Boolean: boolean;
+}
+
+type AK_DATA_DROPDOWN = {
+    Identifier: "DROPDOWN";
+    Flag: string;
+
+    Selected: boolean;
+    Value: any;
+}
+
+type AK_DATA_KEYBIND = {
+    Identifier: "KEYBIND";
+    Flag: string;
+
+    Down: boolean;
+}
+
+export type AK_OBJECT_DATA = AK_DATA_BUTTON | AK_DATA_SLIDER | AK_DATA_TOGGLE | AK_DATA_DROPDOWN | AK_DATA_KEYBIND
+export type AK_OBJECT_CALLBACK = (Data: AK_OBJECT_DATA) -> nil;
+
+export type AK_OBJECT_TOGGLE = {
+    Identifier: "TOGGLE";
+    Flag: string;
+
+    get: () -> boolean;
+    set: (new_value: boolean) -> nil;
+}
+
+export type AK_OBJECT_SLIDER = {
+    Identifier: "SLIDER";
+    Flag: string;
+
+    get: () -> number;
+    set: (new_value: number) -> nil;
+}
+
+export type AK_OBJECT_LABEL = {
+    Identifier: "LABEL";
+    Flag: string;
+
+    get: () -> string;
+    set: (new_text: string) -> nil;
+}
+
+export type AK_OBJECT_INFORMATION = {
+    Identifier: "INFORMATION";
+    Flag: string;
+
+    get: () -> string;
+    set: (new_text: string) -> nil;
+}
+
+export type AK_OBJECT_KEYBIND = {
+    Identifier: "KEYBIND";
+    Flag: string;
+    Event: BindableEvent;
+
+    get: () -> Enum.KeyCode;
+    set: (new_bind: Enum.KeyCode) -> nil;
+}
+
+export type AK_OBJECT_DROPDOWN = {
+    Identifier: "DROPDOWN";
+    Flag: string;
+
+    get: () -> array<any>;
+    set: (new_items: array<any>) -> nil;
+    toggle: (value: boolean) -> nil;
+    refresh: () -> nil;
+}
+
+export type AK_OBJECT_DROPDOWN_BUTTON = {
+    m_isSelected: boolean;
+    m_state: string;
+    m_button: TextButton;
+    m_hovering: boolean;
+    m_value: any;
+    m_tweens: {
+        Hover: array<Tween>;
+        Normal: array<Tween>;
+        Pressing: array<Tween>;
+        Enabled: array<Tween>;
+    };
+    m_connections: AK_CONNECTION_OWNER;
+
+    get: (self: AK_OBJECT_DROPDOWN_BUTTON) -> boolean;
+    set: (self: AK_OBJECT_DROPDOWN_BUTTON, selected: boolean) -> nil;
+    m_destructor: (self: AK_OBJECT_DROPDOWN_BUTTON) -> nil;
+    m_constructor: (self: AK_OBJECT_DROPDOWN_BUTTON) -> nil;
+}
+
+export type AK_OBJECT = AK_OBJECT_TOGGLE | AK_OBJECT_SLIDER | AK_OBJECT_LABEL | AK_OBJECT_INFORMATION
+
+
+export type AK_THEME = {
+	BackgroundLight: Color3,
+	BackgroundMid: Color3,
+	BackgroundDark: Color3,
+	Accent: Color3,
+	White: Color3,
+	Gray: Color3,
+	Divider: Color3,
+	Font_Bold: Font,
+	Font_Regular: Font,
+	SideGradient: ColorSequence,
+	SideTransparency: NumberSequence,
+	BaseTweenInfo: TweenInfo 
+}
+
+local AK_DEFAULT_THEME: AK_THEME = {
+	BackgroundDark = Color3.fromRGB(2, 5, 10);
+	BackgroundMid = Color3.fromRGB(9, 9, 9);
+	BackgroundLight = Color3.fromRGB(10, 10, 12);
+	Accent = Color3.fromRGB(25, 147, 212);
+	White = Color3.fromRGB(255,255,255);
+	Gray = Color3.fromRGB(255,255,255);
+	Divider = Color3.fromRGB(12, 37, 50);
+
+	Font_Bold = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+	Font_Regular = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+	SideGradient = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.new(0.0117647, 0.0823529, 0.117647)), ColorSequenceKeypoint.new(0.518, Color3.new(0.0235294, 0.0235294, 0.0235294)), ColorSequenceKeypoint.new(0.9, Color3.new(0.0235294, 0.0235294, 0.0235294)), ColorSequenceKeypoint.new(1, Color3.new(0.0235294, 0.0235294, 0.0235294))});
+	SideTransparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0, 0), NumberSequenceKeypoint.new(0.1, 0.238, 0), NumberSequenceKeypoint.new(0.497, 0.631, 0), NumberSequenceKeypoint.new(0.891, 0.294, 0), NumberSequenceKeypoint.new(1, 0.131, 0)});
+	BaseTweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Linear);
+};
+local AK_DROPDOWN_INDICATOR = {
+    [true] = "˅", 
+    [false] = "˄"
+}
+
+local AK_GUI_INSET = GuiService:GetGuiInset()
+
+print(AK_GUI_INSET.Y)
+local AK_RANDOM_STRING: (Length: number?) -> string do
+    local AK_RANDOM_SEED = os.clock() * tick()
+    local AK_RANDOM = Random.new(AK_RANDOM_SEED)
+    local AK_PRINTABLE_RANGE = { min = 32, max = 126, n = 126 - 32 }
+    
+    local AK_PRINTABLE: array<string> = table.create(AK_PRINTABLE_RANGE.n) do
+        for i = AK_PRINTABLE_RANGE.min, AK_PRINTABLE_RANGE.max do
+            table.insert(AK_PRINTABLE, string.char(i))
+        end
+    end
+
+    function AK_RANDOM_STRING(Length: number?): string
+        local EnsuredLength: number = (Length or 32);
+        local Buffer = table.create(EnsuredLength, "X");
+
+        for i = 1, EnsuredLength do
+            Buffer[i] = AK_PRINTABLE[AK_RANDOM:NextInteger(1, AK_PRINTABLE_RANGE.n)];
+        end
+
+        return table.concat(Buffer)
+    end
+end
+
+local AK_ROUND_NUMBER: (Number: number, DecimalPlaces: number) -> (number) do
+    local MaxDecimalPlaces = 99
+    local DecimalPlaceMultipliers = table.create(MaxDecimalPlaces + 1)
+    for i = 0, MaxDecimalPlaces do
+        DecimalPlaceMultipliers[i] = 10 ^ i
+    end
+
+    function AK_ROUND_NUMBER(Number, DecimalPlaces)
+        if DecimalPlaces == 0 then
+            Number = Number + 0.5
+            return Number - Number % 1
+        end
+
+        local multiplier = DecimalPlaceMultipliers[DecimalPlaces]
+        local adjustedNumber = (Number * multiplier) + 0.5
+        return (adjustedNumber - adjustedNumber % 1) / multiplier
+    end
+end
+
+local function AK_MAP_TO_RANGE(inValue: number, inMin: number, inMax: number, outMin: number, outMax: number): number
+	local normalizedValue = (inValue - inMin) / (inMax - inMin)
+	local interpolatedValue = (1 - normalizedValue) * outMin + normalizedValue * outMax
+	return interpolatedValue
+end
+
+local function AK_INSTANCE_FROM_PATH<SelfType, ResultType>(self: SelfType, ...: string): ResultType
+    assert(typeof(self) == "Instance", "AK_INSTANCE_FROM_PATH: self has to be of type 'Instance'.")
+    
+    local nargs = select("#", ...)
+    for i = 1, nargs do
+        local v = select(i, ...)
+        self = assert(self:FindFirstChild(v), "Couldn't find subpath.");
+    end
+
+    return self :: ResultType
+end
+
+local function AK_CREATE_TWEEN(...: AK_TWEEN): array<Tween> 
+    local nargs = select("#", ...)
+	
+	local Result = table.create(nargs)
+
+	for Index = 1, nargs do
+		local Value = select(Index, ...);
+		table.insert(Result, TweenService:Create(table.unpack(Value)))
+	end
+
+	return Result
+end
+
+local function AK_PLAY_TWEEN<T>(TweenList: table<T, array<Tween>>, Index: T)
+	for _, Tween in ipairs(TweenList[Index]) do
+		Tween:Play()
+	end
+end
+
+local function AK_CREATE<T>(ClassName: string, Properties: table<any, any>): T
+	local Object = Instance.new(ClassName)
+    local Parent = nil
+
+	for Property, Value in pairs(Properties) do
+        if (type(Property) == "number") and (typeof(Value) == "Instance") then 
+            Value.Parent = Object
+            continue
+        elseif Property == "Parent" then
+			Parent = Value
+			continue
+        end
+
+		Object[Property] = Value
+	end
+
+    if Parent then
+        Object.Parent = Parent
+    end
+
+	return Object
+end
+
+local function AK_VECTOR2_TO_UDIM2(Vector: Vector2): UDim2
+    return UDim2.new(0, Vector.X, 0, Vector.Y)
+end
+
+local function AK_SUBTRACT_VECTORS_TO_UDIM2(PositionA: Vector2, PositionB: Vector2): UDim2
+	return UDim2.new(
+		0, math.round(PositionA.X - PositionB.X),
+		0, math.round(PositionA.Y - PositionB.Y)
+	)
+end
+
+local function AK_SUM_GUI_SIZE(Objects: array<Instance>): (Vector2, number)
+    local Result = Vector2.zero
+    local Count = 0
+
+    for _, ObjectPart in ipairs(Objects) do
+        if (ObjectPart:IsA("GuiBase2d")) then
+            Result += ObjectPart.AbsoluteSize
+            Count += 1
+        end
+    end
+
+    return Result, Count
+end
+
+local function AK_GET_MOUSE_LOCATION(): Vector2
+	return UserInputService:GetMouseLocation() + AK_GUI_INSET
+end
+
+type AK_DROPDOWN_BUTTON_CALLBACK = (Value: any, Selected: boolean) -> nil;
+
+local AK_CONNECTION_OWNER = {} do
+    AK_CONNECTION_OWNER.__index = AK_CONNECTION_OWNER
+
+    function AK_CONNECTION_OWNER:destroy()
+        for index, connection: RBXScriptConnection in ipairs(self._connections) do
+            if (not connection) or (not connection.Connected) then
+                continue
+            end
+
+            connection:Disconnect()
+            self._connections[index] = nil
+        end
+    end
+
+    function AK_CONNECTION_OWNER:move(Connection: RBXScriptConnection) 
+        table.insert(self._connections, Connection)
+    end
+
+    function AK_CONNECTION_OWNER:connect(Signal: RBXScriptSignal, callback: (...any) -> ())
+        table.insert(self._connections, Signal:Connect(callback))
+    end
+
+    function AK_CONNECTION_OWNER.new()
+        local self = setmetatable({
+            _connections = setmetatable({}, { __mode = "v" });
+        }, AK_CONNECTION_OWNER)
+
+        return self
+    end
+end
+
+type AK_CONNECTION_OWNER = typeof(AK_CONNECTION_OWNER.new());
+
+local function AK_LOAD_DROPDOWN_ITEMS(ItemHolder: ScrollingFrame, Items: array<any>, Data: AK_ITEM_DROPDOWN, Theme: AK_THEME, Callback: AK_DROPDOWN_BUTTON_CALLBACK): array<AK_OBJECT_DROPDOWN_BUTTON>
+    local Buttons: array<AK_OBJECT_DROPDOWN_BUTTON> = {}
+
+    local SelectMultiple = Data.SelectMultiple;
+
+    for Index: number, Value: any in ipairs(Items) do
+        local Button: TextButton = AK_CREATE("TextButton", {
+			FontFace = Theme.Font_Regular;
+			Text = "";
+			TextColor3 = Color3.new(0, 0, 0);
+			TextSize = 14;
+			AutoButtonColor = false;
+			BackgroundColor3 = Theme.BackgroundDark;
+			Position = UDim2.new(0.112, 0, 0.02, 0);
+			Size = UDim2.new(1, -10, 0, 20);
+			ZIndex = 20;
+			Name = "Button";
+			Parent = ItemHolder;
+
+            AK_CREATE("UICorner", {
+                CornerRadius = UDim.new(0, 4);
+            });
+		})
+
+		local Label: TextLabel = AK_CREATE("TextLabel", {
+			FontFace = Theme.Font_Regular;
+			RichText = true;
+			Text = tostring(Value);
+			TextColor3 = Color3.new(1, 1, 1);
+			TextSize = 16;
+			TextStrokeColor3 = Theme.BackgroundDark;
+			TextWrapped = true;
+			TextXAlignment = Enum.TextXAlignment.Left;
+			AnchorPoint = Vector2.new(0, 0.5);
+			BackgroundColor3 = Color3.new(1, 1, 1);
+			BackgroundTransparency = 1;
+			Position = UDim2.new(0, 5, 0.5, 0);
+			Size = UDim2.new(1, -5, 1, 0);
+			ZIndex = 24;
+			Name = "Label";
+			Parent = Button;
+		})
+
+		local UIStroke: UIStroke = AK_CREATE("UIStroke", {
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+			Color = Theme.Accent;
+			Parent = Button;
+		})
+
+        local BUTTON_OBJECT: AK_OBJECT_DROPDOWN_BUTTON = {
+            m_hovering = false;
+            m_isSelected = if SelectMultiple then false else true;
+            m_button = Button;
+            m_value = Value;
+            m_state = "Normal";
+            m_connections = AK_CONNECTION_OWNER.new();
+            m_tweens = {
+                Hover = AK_CREATE_TWEEN(
+                    {Label, Theme.BaseTweenInfo, { TextTransparency = 0.35 }},
+                    {UIStroke, Theme.BaseTweenInfo, { Transparency = 0.4 }}
+                );
+                Normal = AK_CREATE_TWEEN(
+                    {Label, Theme.BaseTweenInfo, { TextTransparency = 0.7 }},
+                    {UIStroke, Theme.BaseTweenInfo, { Transparency = 0.6 }}
+                );
+                Pressing = AK_CREATE_TWEEN(
+                    {Label, Theme.BaseTweenInfo, { TextTransparency = 0.2 }},
+                    {UIStroke, Theme.BaseTweenInfo,  { Transparency = 0.25 }}
+                );
+                Enabled = AK_CREATE_TWEEN(
+                    {Label, Theme.BaseTweenInfo, { TextTransparency = 0 }},
+                    {UIStroke, Theme.BaseTweenInfo, { Transparency = 0 }}
+                );
+            };
+
+            get = function(self: AK_OBJECT_DROPDOWN_BUTTON): boolean
+                return self.m_isSelected;
+            end;
+            set = function(self: AK_OBJECT_DROPDOWN_BUTTON, selected: boolean): nil
+                assert(SelectMultiple, "Cannot set a non-multi select dropdown item. i need to fix this man")
+                self.m_isSelected = selected;
+                return;
+            end;
+            m_destructor = function(self: AK_OBJECT_DROPDOWN_BUTTON): nil
+                if not self.m_connections then
+                    return;
+                end
+
+                self.m_connections:destroy();
+                self.m_button:Destroy();
+
+                self.m_connections = nil;
+                return;
+            end;
+            m_constructor = function(self: AK_OBJECT_DROPDOWN_BUTTON): nil
+                self.m_connections:connect(self.m_button.MouseButton1Down, function()
+                    AK_PLAY_TWEEN(self.m_tweens, "Pressing")
+                end)
+
+                self.m_connections:connect(self.m_button.MouseEnter, function()
+                    self.m_hovering = true
+                    self.m_state = "Hover"
+                    if SelectMultiple and self.m_isSelected then
+                        return
+                    end
+                    AK_PLAY_TWEEN(self.m_tweens, self.m_state)
+                end)
+        
+                self.m_connections:connect(self.m_button.MouseLeave, function()
+                    self.m_hovering = false
+                    self.m_state = "Normal"
+                    if SelectMultiple and self.m_isSelected then 
+                        return 
+                    end
+                    AK_PLAY_TWEEN(self.m_tweens, self.m_state)
+                end)
+
+                self.m_connections:connect(self.m_button.MouseButton1Up, function()
+                    local isSelected = not self.m_isSelected
+                    self.m_isSelected = isSelected
+
+                    if isSelected then
+                        self.m_state = "Enabled"
+                    else
+                        self.m_state = (self.m_hovering and "Hover") or "Normal"
+                    end
+
+                    Callback(Value, isSelected)
+                    AK_PLAY_TWEEN(self.m_tweens, self.m_state)
+                end)
+
+                AK_PLAY_TWEEN(self.m_tweens, "Normal")
+                
+                return;
+            end;
+        }
+
+        BUTTON_OBJECT:m_constructor()
+        table.insert(Buttons, BUTTON_OBJECT)
+    end
+
+    return Buttons
+end
+
+local function AK_CONCAT_TABLE(Input: array<any>, Separator: string, Invert: boolean): (string, number)
+	local InputSize = #Input
+    if (InputSize <= 0) then
+        return "", 0;
+    end
+
+	local OutputBuffer = table.create(InputSize)
+
+	local Start, Limit, Step
+
+	if Invert then
+		Start, Limit, Step = InputSize, 1, -1
+	else
+		Start, Limit, Step = 1, InputSize, 1
+	end
+
+	for Index = Start, Limit, Step do
+		local Value = Input[Index]
+
+		if Value == nil then
+			continue
+		end
+
+		table.insert(OutputBuffer, tostring(Value))
+	end
+
+	return table.concat(OutputBuffer, Separator), #OutputBuffer
+end
+
+local function AK_GET_DROPDOWN_SIZE(ItemHolder: ScrollingFrame, DropdownObject: Frame): Vector2
+    local X, Y = DropdownObject.AbsoluteSize.X, 0;
+
+    local Padding, ListPadding = 0, 0;
+    local Count = 0;
+
+
+    for _, Object in ipairs(ItemHolder:GetChildren()) do
+        if Object:IsA("TextButton") then
+            Count += 1
+            Y += Object.Size.Y.Offset
+
+            local CurrentX = Object.Label.TextBounds.X + 15
+            if CurrentX > X then
+                X = CurrentX
+            end
+        elseif Object:IsA("UIPadding") then
+            Padding += Object.PaddingTop.Offset + Object.PaddingBottom.Offset
+        elseif Object:IsA("UIListLayout") then
+            ListPadding += Object.Padding.Offset
+        end
+    end
+
+    return Vector2.new(X, Y)
+end
+
+--// AK_LIBRARY DEF
+type AK_CORE_OBJECTS = {
+    AlaskaUI: ScreenGui;
+    Container: Frame;
+    SkeletonSection: Frame;
+    UiStroke: UIStroke;
+    MainSection: Frame;
+    SideSection: Frame;
+    TopSection: Frame;
+    SideContainer: ScrollingFrame;
+    SideBackground: Frame;
+    SideDivider: Frame;
+    IconImage: ImageLabel;
+    TitleText: TextLabel;
+    TopDivider: Frame;
+};
+
+type AK_LIB_SETTINGS = {
+    Theme: AK_THEME?;
+    Parent: Instance?;
+    Title: string?;
+    Icon: string?;
+}
+
+type AK_LIBRARY_IMPL = {
+    new: (Settings: AK_LIB_SETTINGS?) -> AK_LIBRARY_IMPL;
+
+    m_InstantiateObjects: (self: AK_LIBRARY) -> nil;
+    m_InitializeObjects: (self: AK_LIBRARY) -> nil;
+    m_construct: (self: AK_LIBRARY) -> nil;
+    createTab: (self: AK_LIBRARY_IMPL, Settings: AK_TAB_SETTINGS) -> AK_TAB_IMPL;
+
+    __index: AK_LIBRARY_IMPL;
+};
+
+type AK_LIBRARY = typeof(setmetatable({} :: {
+    Parent: Instance;
+    Theme: AK_THEME;
+    Objects: AK_CORE_OBJECTS;
+    Connections: AK_CONNECTION_OWNER,
+    IsVisible: boolean;
+    Title: string?;
+    Icon: string?;
+    CurrentTab: AK_TAB?;
+    Keybinds: array<AK_OBJECT_KEYBIND>;
+}, {} :: AK_LIBRARY_IMPL))
+--// AK_LIBRARY DEF
+
+--// AK_TAB DEF
+type AK_TAB_SECTION = {
+    Skeleton: Frame;
+    Container: Frame;
+}
+
+type AK_TAB_OBJECTS = {
+    Button: {
+        Object: TextButton;
+        Title: TextLabel;
+        Icon: ImageLabel;
+    };
+    Right: AK_TAB_SECTION;
+    Left: AK_TAB_SECTION;
+    Main: AK_TAB_SECTION;
+    DropdownSkeleton: Frame;
+
+    UiStroke: UIStroke;
+}
+
+type AK_TAB_SETTINGS = {
+    Title: string?;
+    Icon: string?;
+    Id: string;
+}
+
+type AK_TAB_IMPL = {
+    new: (TabOwner: AK_LIBRARY, TabSettings: AK_TAB_SETTINGS) -> AK_TAB_IMPL;
+
+    GroupBox: (self: AK_TAB_IMPL, Settings: AK_GROUP_SETTINGS) -> AK_GROUP_IMPL;
+
+    getGroups: (self: AK_TAB_IMPL) -> array<AK_GROUP_IMPL>;
+
+    m_getGroups: (self: AK_TAB) -> array<AK_GROUP_IMPL>;
+    m_setVisible: (self: AK_TAB, Value: boolean) -> nil;
+    m_InstantiateObjects: (self: AK_TAB) -> nil;
+    m_InitializeObjects: (self: AK_TAB) -> nil;
+    m_construct: (self: AK_TAB) -> nil;
+
+    __index: AK_TAB_IMPL;
+};
+
+type AK_TAB = typeof(setmetatable({} :: {
+    Owner: AK_LIBRARY;
+    Objects: AK_TAB_OBJECTS;
+    Title: string?;
+    Icon: string?;
+    Connections: AK_CONNECTION_OWNER,
+    IsVisible: boolean;
+    Tweens: table<string, array<Tween>>;
+    ButtonState: string;
+    Groups: array<AK_GROUP_IMPL>;
+}, {} :: AK_TAB_IMPL))
+--// AK_TAB DEF
+
+--// AK_GROUP DEF
+type AK_GROUP_OBJECTS = {
+    GroupFrame: Frame;
+    TabSkeleton: Frame;
+    GroupContainer: ScrollingFrame;
+    GroupScrollSection: Frame;
+    TitleLabel: TextLabel;
+    UiStroke: UIStroke;
+}
+
+type AK_GROUP_SETTINGS = {
+    Side: AK_SIDE;
+    Title: string?;
+    Id: string;
+}
+
+type AK_GROUP_IMPL = {
+    new: (GroupOwner: AK_TAB, GroupSettings: AK_GROUP_SETTINGS) -> AK_GROUP_IMPL;
+
+    addObject: (self: AK_GROUP_IMPL, Callback: AK_OBJECT_CALLBACK, Items: array<AK_ITEM>) -> AK_OBJECTS_IMPL;
+    m_adjustCanvas: (self: AK_GROUP) -> nil;
+    m_InstantiateObjects: (self: AK_GROUP) -> nil;
+    m_InitializeObjects: (self: AK_GROUP) -> nil;
+    m_construct: (self: AK_GROUP) -> nil;
+
+    __index: AK_GROUP_IMPL;
+};
+
+type AK_GROUP = typeof(setmetatable({} :: {
+    Owner: AK_TAB;
+    Title: string?;
+    Side: AK_SIDE;
+    Connections: AK_CONNECTION_OWNER;
+    Objects: AK_GROUP_OBJECTS;
+}, {} :: AK_GROUP_IMPL))
+--// AK_GROUP DEF
+
+
+--// AK_OBJECT DEF
+type AK_OBJECTS_IMPL = {
+    new: (ObjectsOwner: AK_GROUP, Callback: AK_OBJECT_CALLBACK) -> AK_OBJECTS_IMPL;
+
+    Button: (self: AK_OBJECTS, Data: AK_ITEM_BUTTON) -> nil;
+    Keybind: (self: AK_OBJECTS, Data: AK_ITEM_KEYBIND) -> AK_OBJECT_KEYBIND;
+    Toggle: (self: AK_OBJECTS, Data: AK_ITEM_TOGGLE) -> AK_OBJECT_TOGGLE;
+    Slider: (self: AK_OBJECTS, Data: AK_ITEM_SLIDER) -> AK_OBJECT_SLIDER;
+    Label: (self: AK_OBJECTS, Data: AK_ITEM_LABEL) -> AK_OBJECT_LABEL;
+    Information: (self: AK_OBJECTS, Data: AK_ITEM_INFORMATION) -> AK_OBJECT_INFORMATION;
+    Dropdown: (self: AK_OBJECTS, Data: AK_ITEM_DROPDOWN) -> AK_OBJECT_DROPDOWN;
+
+    getObjectFromFlag: (self: AK_OBJECTS_IMPL, Id: AK_ID, Flag: string) -> AK_OBJECT?;
+    getObjects: (self: AK_OBJECTS_IMPL) -> array<AK_OBJECT>;
+
+    m_getObjects: (self: AK_OBJECTS_IMPL) -> array<AK_OBJECT>;
+    m_getObject: (self: AK_OBJECTS, Id: AK_ID, Flag: string) -> AK_OBJECT?;
+    m_registerObject: (self: AK_OBJECTS, Object: AK_OBJECT) -> nil;
+    m_InstantiateObjects: (self: AK_OBJECTS) -> nil;
+    m_InitializeObjects: (self: AK_OBJECTS) -> nil;
+    m_construct: (self: AK_OBJECTS) -> nil;
+
+    __index: AK_OBJECTS_IMPL;
+};
+
+type AK_OBJECTS = typeof(setmetatable({} :: {
+    Owner: AK_GROUP;
+    Connections: AK_CONNECTION_OWNER;
+    Container: Frame;
+    Hovering: BindableEvent;
+    Callback: AK_OBJECT_CALLBACK;
+    Objects: array<AK_OBJECT>;
+}, {} :: AK_OBJECTS_IMPL))
+--// AK_OBJECT DEF
+
+--// Object Class
+local AK_OBJECTS = {} :: AK_OBJECTS_IMPL do
+    AK_OBJECTS.__index = AK_OBJECTS;
+
+    function AK_OBJECTS:Button(Data: AK_ITEM_BUTTON): nil
+        local Theme = self.Owner.Owner.Owner.Theme;
+        local Connections = self.Connections;
+
+        local ButtonObject: Frame = AK_CREATE("Frame", {
+			AnchorPoint = Vector2.new(0, 0.5);
+			BackgroundColor3 = Theme.BackgroundDark;
+			BorderSizePixel = 0;
+			Position = UDim2.new(0.076, 67, 0.45, 0);
+			Size = UDim2.new(0, 20, 0, 20);
+			Name = "ButtonObject";
+			Parent = self.Container;
+			LayoutOrder = Data.LayoutOrder;
+            
+            AK_CREATE("UICorner", {
+                CornerRadius = UDim.new(0, 4);
+            });
+            AK_CREATE("UIStroke", {
+                Color = Theme.Accent;
+            });
+            AK_CREATE("ImageButton", {
+                Image = Data.Icon or "rbxassetid://10519263435";
+                ScaleType = Enum.ScaleType.Fit;
+                BackgroundColor3 = Color3.new(1, 1, 1);
+                BackgroundTransparency = 1;
+                Position = UDim2.new(0, 1, 0, 1);
+                Size = UDim2.new(1, -2, 1, -2);
+                Name = "Button";
+            }),
+		});
+
+        local Button = AK_INSTANCE_FROM_PATH(ButtonObject, "Button")
+        local UIStroke = AK_INSTANCE_FROM_PATH(ButtonObject, "UIStroke")
+
+        local Tweens = {
+			Hover = AK_CREATE_TWEEN(
+				{ Button, Theme.BaseTweenInfo, { ImageTransparency = 0.35 } },
+				{ UIStroke, Theme.BaseTweenInfo, { Transparency = 0.4 } }
+			);
+			Normal = AK_CREATE_TWEEN(
+				{ Button, Theme.BaseTweenInfo, { ImageTransparency = 0.7 } },
+				{ UIStroke, Theme.BaseTweenInfo, { Transparency = 0.6 } }
+			);
+			Pressing = AK_CREATE_TWEEN(
+				{ Button, Theme.BaseTweenInfo, { ImageTransparency = 0 } },
+				{ UIStroke, Theme.BaseTweenInfo,  { Transparency = 0.25 } }
+			);
+		}
+  
+		local ButtonState = "Normal"
+
+		Connections:connect(Button.MouseButton1Down, function()
+			AK_PLAY_TWEEN(Tweens, "Pressing")
+		end)
+
+		Connections:connect(Button.MouseButton1Up, function()
+            self.Callback({
+                Identifier = "BUTTON";
+                Flag = Data.Flag;
+            } :: AK_DATA_BUTTON)
+			AK_PLAY_TWEEN(Tweens, ButtonState)
+		end)
+
+		Connections:connect(Button.MouseEnter, function()
+			ButtonState = "Hover"
+			AK_PLAY_TWEEN(Tweens, ButtonState)
+		end)
+
+		Connections:connect(Button.MouseLeave, function()
+			ButtonState = "Normal"
+			AK_PLAY_TWEEN(Tweens, ButtonState)
+		end)
+
+		AK_PLAY_TWEEN(Tweens, "Normal")
+        return;
+    end
+
+    function AK_OBJECTS:Keybind(Data: AK_ITEM_KEYBIND): AK_OBJECT_KEYBIND
+        local Theme = self.Owner.Owner.Owner.Theme;
+        local Connections = self.Connections;
+
+        local KeybindObject: Frame = AK_CREATE("Frame", {
+			AnchorPoint = Vector2.new(0, 0.5);
+			BackgroundColor3 = Theme.BackgroundDark;
+			BorderSizePixel = 0;
+			Position = UDim2.new(0.076, 67, 0.45, 0);
+			Size = UDim2.new(0, 60, 0, 20);
+			Name = "KeybindObject";
+			Parent = self.Container;
+			LayoutOrder = Data.LayoutOrder;
+            
+            AK_CREATE("UICorner", {
+                CornerRadius = UDim.new(0, 4);
+            });
+            AK_CREATE("UIStroke", {
+                Color = Theme.Accent;
+            });
+            AK_CREATE("TextButton", {
+                TextColor3 = Theme.White;
+                TextSize = 16;
+			    FontFace = Theme.Font_Regular;
+                BackgroundColor3 = Color3.new(1, 1, 1);
+                BackgroundTransparency = 1;
+                Position = UDim2.new(0, 1, 0, 1);
+                Size = UDim2.new(1, -2, 1, -2);
+                Name = "Button";
+                Text = Data.Bind and Data.Bind.Name or "...";
+            }),
+		});
+
+        
+        local Button = AK_INSTANCE_FROM_PATH(KeybindObject, "Button")
+        local UIStroke = AK_INSTANCE_FROM_PATH(KeybindObject, "UIStroke")
+
+        local Tweens = {
+			Hover = AK_CREATE_TWEEN(
+				{ Button, Theme.BaseTweenInfo, { TextTransparency = 0.35 } },
+				{ UIStroke, Theme.BaseTweenInfo, { Transparency = 0.4 } }
+			);
+			Normal = AK_CREATE_TWEEN(
+				{ Button, Theme.BaseTweenInfo, { TextTransparency = 0.7 } },
+				{ UIStroke, Theme.BaseTweenInfo, { Transparency = 0.6 } }
+			);
+			Pressing = AK_CREATE_TWEEN(
+				{ Button, Theme.BaseTweenInfo, { TextTransparency = 0 } },
+				{ UIStroke, Theme.BaseTweenInfo,  { Transparency = 0.25 } }
+			);
+		}
+  
+		local ButtonState = "Normal"
+
+        local ValidInputTypes = {
+            [Enum.UserInputType.Keyboard] = true;
+            [Enum.UserInputType.MouseButton1] = true;
+            [Enum.UserInputType.MouseButton2] = true;
+            [Enum.UserInputType.MouseButton3] = true;
+        }
+
+        local MouseButtonMap = {
+            [Enum.UserInputType.MouseButton1] = Enum.KeyCode.MouseLeftButton;
+            [Enum.UserInputType.MouseButton2] = Enum.KeyCode.MouseRightButton;
+            [Enum.UserInputType.MouseButton3] = Enum.KeyCode.MouseMiddleButton;
+        }
+
+        local KeybindNameMap = {
+            [Enum.KeyCode.MouseLeftButton] = "MB 1";
+            [Enum.KeyCode.MouseRightButton] = "MB 2";
+            [Enum.KeyCode.MouseMiddleButton] = "MB 3";
+            [Enum.KeyCode.LeftShift] = "L Shift";
+            [Enum.KeyCode.RightShift] = "R Shift";
+            [Enum.KeyCode.LeftAlt] = "L Alt";
+            [Enum.KeyCode.RightAlt] = "R Alt";
+            [Enum.KeyCode.LeftControl] = "L Ctrl";
+            [Enum.KeyCode.RightControl] = "R Ctrl";
+            [Enum.KeyCode.LeftSuper] = "L Win";
+            [Enum.KeyCode.RightSuper] = "R Win";
+            [Enum.KeyCode.PageDown] = "Pg Down";
+            [Enum.KeyCode.RightSuper] = "Pg Up";
+        }
+
+        local OBJECT : AK_OBJECT_KEYBIND = {
+            Flag = Data.Flag;
+            Identifier = "KEYBIND";
+            Event = Instance.new("BindableEvent");
+
+            get = function()
+                return Data.Bind;
+            end;
+            set = function(new_bind: Enum.KeyCode)
+                Data.Bind = new_bind;
+            end;
+        }
+
+        local IsSelecting = false
+
+		Connections:connect(Button.MouseButton1Down, function()
+            local KeybindEvent = Instance.new("BindableEvent")
+            IsSelecting = true;
+
+            Button.Text = "..."
+			AK_PLAY_TWEEN(Tweens, "Pressing")
+
+            local TempConnection; 
+            TempConnection = UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessedEvent: boolean)
+                if gameProcessedEvent or (not ValidInputTypes[input.UserInputType]) then
+                    return
+                end
+
+                KeybindEvent:Fire(MouseButtonMap[input.UserInputType] or input.KeyCode)
+            end)
+
+            local Bind: Enum.KeyCode = KeybindEvent.Event:Wait()
+            TempConnection:Disconnect();
+            KeybindEvent:Destroy()
+
+            IsSelecting = false;
+        
+            OBJECT.set(Bind)
+            Button.Text = KeybindNameMap[Bind] or Bind.Name;
+
+			AK_PLAY_TWEEN(Tweens, ButtonState)
+		end)
+
+		Connections:connect(Button.MouseButton1Up, function()
+            if IsSelecting then
+                return;
+            end
+			AK_PLAY_TWEEN(Tweens, ButtonState)
+		end)
+
+		Connections:connect(Button.MouseEnter, function()
+			ButtonState = "Hover"
+            if IsSelecting then
+                return;
+            end
+			AK_PLAY_TWEEN(Tweens, ButtonState)
+		end)
+
+		Connections:connect(Button.MouseLeave, function()
+			ButtonState = "Normal"
+            if IsSelecting then
+                return;
+            end
+			AK_PLAY_TWEEN(Tweens, ButtonState)
+		end)
+
+        Connections:connect(OBJECT.Event.Event, function(Down: boolean)
+            self.Callback({
+                Identifier = "KEYBIND";
+                Flag = Data.Flag;
+                Down = Down;
+            } :: AK_DATA_KEYBIND)
+        end)
+
+        table.insert(self.Owner.Owner.Owner.Keybinds, OBJECT)
+
+        AK_PLAY_TWEEN(Tweens, "Normal")
+        return OBJECT;
+    end
+
+    function AK_OBJECTS:Toggle(Data: AK_ITEM_TOGGLE): AK_OBJECT_TOGGLE
+        local Theme = self.Owner.Owner.Owner.Theme;
+        local Connections = self.Connections;
+
+        local Value = Data.Default or false 
+
+        local ToggleIndicator: Frame = AK_CREATE("Frame", {
+			BackgroundColor3 = Theme.Accent;
+			BorderSizePixel = 0;
+			Position = UDim2.new(0, 42, 0, 0);
+			Size = UDim2.new(0, 20, 0, 20);
+			Name = "ToggleIndicator";
+			Parent = self.Container;
+			LayoutOrder = Data.LayoutOrder;
+
+            AK_CREATE("UICorner", {
+                CornerRadius = UDim.new(0, 6);
+            });
+            AK_CREATE("Frame", {
+                AnchorPoint = Vector2.new(0.5, 0.5);
+                BackgroundColor3 = (Value and Theme.Accent) or (Theme.BackgroundLight);
+                BorderSizePixel = 0;
+                Position = UDim2.new(0.5, 0, 0.5, 0);
+                Size = UDim2.new(1, -4, 1, -4);
+                Name = "Background";
+
+                AK_CREATE("UICorner", {
+                    CornerRadius = UDim.new(0, 4);
+                });
+                AK_CREATE("UIStroke", {
+                    Color = Theme.BackgroundDark;
+                });
+            });
+            AK_CREATE("TextButton", {
+                FontFace = Theme.Font_Regular;
+                Text = "";
+                TextColor3 = Color3.new(0, 0, 0);
+                TextSize = 14;
+                BackgroundTransparency = 1;
+                Size = UDim2.new(1, 0, 1, 0);
+                ZIndex = 3;
+            });
+		})
+
+        local Trigger: TextButton = AK_INSTANCE_FROM_PATH(ToggleIndicator, "TextButton");
+        local Background: Frame = AK_INSTANCE_FROM_PATH(ToggleIndicator, "Background");
+
+        local Tweens = {
+			Hover = AK_CREATE_TWEEN(
+				{ ToggleIndicator, Theme.BaseTweenInfo, { Transparency = 0.4 } }
+			);
+			Pressing = AK_CREATE_TWEEN(
+				{ ToggleIndicator, Theme.BaseTweenInfo, { Transparency = 0.2 } }
+			);
+			[true] = AK_CREATE_TWEEN(
+				{ Background, Theme.BaseTweenInfo, { BackgroundColor3 = Theme.Accent, Transparency = 0 } },
+				{ ToggleIndicator, Theme.BaseTweenInfo,  { Transparency = 0 } }
+			);
+			[false] = AK_CREATE_TWEEN(
+				{ Background, Theme.BaseTweenInfo, { BackgroundColor3 = Theme.BackgroundLight, Transparency = 1 } },
+				{ ToggleIndicator, Theme.BaseTweenInfo,  { Transparency = 0.6 } }
+			);
+		}
+
+        local OBJECT : AK_OBJECT_TOGGLE = {
+            Identifier = "TOGGLE";
+            Flag = Data.Flag;
+
+            get = function() return Value end;
+            set = function(new_value: boolean)
+                Value = new_value
+                AK_PLAY_TWEEN(Tweens, Value)
+
+                self.Callback({
+                    Identifier = "TOGGLE";
+                    Flag = Data.Flag,
+                    Boolean = true;
+                } :: AK_DATA_TOGGLE)
+            end;
+        };
+
+		Connections:connect(Trigger.MouseButton1Down, function()
+			AK_PLAY_TWEEN(Tweens, "Pressing")
+		end)
+
+		Connections:connect(Trigger.MouseButton1Up, function()
+            OBJECT.set(not Value)
+		end)
+
+		Connections:connect(Trigger.MouseEnter, function()
+			AK_PLAY_TWEEN(Tweens, "Hover")
+		end)
+
+		Connections:connect(Trigger.MouseLeave, function()
+			AK_PLAY_TWEEN(Tweens, Value)
+		end)
+
+		AK_PLAY_TWEEN(Tweens, Value)
+        return OBJECT;
+    end
+
+    function AK_OBJECTS:Slider(Data: AK_ITEM_SLIDER): AK_OBJECT_SLIDER
+        local Theme = self.Owner.Owner.Owner.Theme;
+        local Connections = self.Connections;
+
+        local Precision = (Data.Precision and math.clamp(Data.Precision, 0, 99)) or 0
+		local Format = (Data.Format or "%s")
+        
+        local SliderObject: Frame = AK_CREATE("Frame", {
+			AnchorPoint = Vector2.new(0, 0.5);
+			BackgroundColor3 = Theme.BackgroundDark;
+			BorderSizePixel = 0;
+			Position = UDim2.new(0.076, 67, 0.45, 0);
+			Size = UDim2.new(0, 129, 0, 18);
+			Name = "SliderObject";
+			Parent = self.Container;
+			LayoutOrder = Data.LayoutOrder;
+
+			AK_CREATE("UICorner", {
+				CornerRadius = UDim.new(0, 4);
+			});
+			AK_CREATE("UIStroke", {
+				Color = Theme.Accent;
+			});
+			AK_CREATE("TextLabel", {
+				FontFace = Theme.Font_Regular;
+				Text = "";
+				TextColor3 = Color3.new(1, 1, 1);
+				TextSize = 16;
+				TextStrokeColor3 = Theme.BackgroundDark;
+				TextStrokeTransparency = 0;
+				TextWrapped = true;
+				BackgroundColor3 = Color3.new(1, 1, 1);
+				BackgroundTransparency = 1;
+				Size = UDim2.new(1, 0, 1, 0);
+				ZIndex = 2;
+				Name = "Label";
+			});
+			AK_CREATE("Frame", {
+				AnchorPoint = Vector2.new(0.5, 0);
+				BackgroundColor3 = Color3.new(1, 1, 1);
+				BackgroundTransparency = 1;
+				BorderSizePixel = 0;
+				Position = UDim2.new(0.5, 0, 0, 0);
+				Size = UDim2.new(1, -2, 1, 0);
+				Name = "SliderBounds";
+
+				AK_CREATE("Frame", {
+					AnchorPoint = Vector2.new(0, 0.5);
+					BackgroundColor3 = Theme.Accent;
+					BorderSizePixel = 0;
+					Position = UDim2.new(0, 0, 0.5, 0);
+					Size = UDim2.new(0.5, 0, 1, -2);
+					Name = "Fill";
+
+					AK_CREATE("UICorner", {
+						CornerRadius = UDim.new(0, 4);
+					});
+				});
+			});
+		});
+
+        local UiStroke: UIStroke = AK_INSTANCE_FROM_PATH(SliderObject, "UIStroke")
+        local Label: TextLabel = AK_INSTANCE_FROM_PATH(SliderObject, "Label")
+        local SliderBounds: Frame = AK_INSTANCE_FROM_PATH(SliderObject, "SliderBounds")
+        local Fill: Frame = AK_INSTANCE_FROM_PATH(SliderBounds, "Fill")
+        local FillUiCorner: UICorner = AK_INSTANCE_FROM_PATH(Fill, "UICorner")
+
+		local MinRoundingX = (FillUiCorner.CornerRadius.Offset * 2) + 10
+
+        local CurrentValue = Data.Default
+        local CallbackData = {
+            Identifier = "SLIDER";
+            Flag = Data.Flag;
+            Number = CurrentValue;
+        } :: AK_DATA_SLIDER
+
+        local function UpdateSlider()
+            local MousePosition = AK_GET_MOUSE_LOCATION();
+            local BoundsAbsSize = SliderBounds.AbsoluteSize;
+            local BoundsAbsPos = SliderBounds.AbsolutePosition;
+
+            local ClampedX = math.clamp(MousePosition.X - BoundsAbsPos.X, 0, BoundsAbsSize.X)
+
+            local Value = AK_ROUND_NUMBER(
+                AK_MAP_TO_RANGE(ClampedX, 0, SliderBounds.AbsoluteSize.X, Data.Min, Data.Max),
+                Precision
+            )
+
+            if CurrentValue ~= Value then
+                CurrentValue = Value
+                CallbackData.Number = CurrentValue
+                self.Callback(CallbackData)
+                Label.Text = string.format(Format, CurrentValue)
+            end
+            
+		    Fill.Size = UDim2.new(ClampedX / BoundsAbsSize.X, 0, 1, -2)
+        end
+
+        local Tweens = {
+			Normal = AK_CREATE_TWEEN(
+				{ Label, Theme.BaseTweenInfo, { TextTransparency = 0.5 } },
+				{ UiStroke, Theme.BaseTweenInfo, { Transparency = 0.6 } }
+			);
+			Hover = AK_CREATE_TWEEN(
+				{ Label, Theme.BaseTweenInfo, { TextTransparency = 0.35 } },
+				{ UiStroke, Theme.BaseTweenInfo, { Transparency = 0.2 } }
+			);
+			Sliding = AK_CREATE_TWEEN(
+				{ Label, Theme.BaseTweenInfo, { TextTransparency = 0 } },
+				{ UiStroke, Theme.BaseTweenInfo,  { Transparency = 0 } }
+			);
+		}
+
+        local CurrentState = "Normal"
+        local ChangedConnection, UpdateConnection, CurrentInput
+    
+        local function InputChanged(PropertyName)
+			if (not CurrentInput) then
+				return
+			end
+
+			local PropertyValue = CurrentInput[PropertyName]
+			if PropertyName == "UserInputState" then
+				if PropertyValue == Enum.UserInputState.End then
+					CurrentInput = nil
+					ChangedConnection:Disconnect()
+					UpdateConnection:Disconnect()
+
+					AK_PLAY_TWEEN(Tweens, CurrentState)
+				end
+			end
+		end
+
+        Connections:connect(SliderObject.InputBegan, function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+				AK_PLAY_TWEEN(Tweens, "Sliding")
+				CurrentInput = Input
+				ChangedConnection = Input.Changed:Connect(InputChanged)
+				UpdateConnection = RunService.RenderStepped:Connect(UpdateSlider)
+			end
+		end)
+
+		Connections:connect(SliderObject.MouseEnter, function()
+			CurrentState = "Hover"
+			if (not CurrentInput) then
+				AK_PLAY_TWEEN(Tweens, CurrentState)
+			end
+		end)
+
+		Connections:connect(SliderObject.MouseLeave, function()
+			CurrentState = "Normal"
+			if (not CurrentInput) then
+				AK_PLAY_TWEEN(Tweens, CurrentState)
+			end
+		end)
+
+		Connections:connect(Fill:GetPropertyChangedSignal("AbsoluteSize"), function()
+			local CurrentX = Fill.AbsoluteSize.X
+			if CurrentX < MinRoundingX then
+				local Value = (1 - (CurrentX / MinRoundingX))
+				Fill.BackgroundTransparency = Value
+			else
+				Fill.BackgroundTransparency = 0
+			end
+		end)
+
+        AK_PLAY_TWEEN(Tweens, "Normal")
+
+        local OBJECT : AK_OBJECT_SLIDER = {
+            Identifier = "SLIDER";
+            Flag = Data.Flag;
+
+            get = function()
+                return CurrentValue
+            end;
+            set = function(new_value: number)
+                CurrentValue = math.clamp(new_value, Data.Min, Data.Max)
+
+                local Scale =  AK_MAP_TO_RANGE(CurrentValue, Data.Min, Data.Max, 0, SliderBounds.AbsoluteSize.X) / SliderBounds.AbsoluteSize.X
+                
+                Fill.Size = UDim2.new(Scale, 0, 1, -2)
+                Label.Text = string.format(Format, CurrentValue)
+                CallbackData.Number = CurrentValue
+
+                self.Callback(CallbackData)
+            end;
+        };
+
+        OBJECT.set(Data.Default)
+
+        return OBJECT;
+    end
+
+    function AK_OBJECTS:Label(Data: AK_ITEM_LABEL): AK_OBJECT_LABEL
+        local Theme = self.Owner.Owner.Owner.Theme;
+        local Connections = self.Connections;
+
+        local Label: TextLabel = AK_CREATE("TextLabel", {
+			FontFace = Theme.Font_Regular;
+			TextColor3 = Theme.White;
+			TextSize = 16;
+			TextXAlignment = Enum.TextXAlignment.Left;
+			AnchorPoint = Vector2.new(0, 0.5);
+			BackgroundColor3 = Theme.White;
+			BackgroundTransparency = 1;
+			Position = UDim2.new(0.118, 0, 0.5, 0);
+			Name = "Label";
+			Text = "";
+			Parent = self.Container;
+			LayoutOrder = Data.LayoutOrder;
+		})
+
+        local OBJECT : AK_OBJECT_LABEL = {
+            Identifier = "LABEL";
+            Flag = Data.Flag;
+
+            get = function()
+                return Label.Text
+            end;
+            set = function(new_text: string)
+                Label.Text = new_text
+                Label.Size = UDim2.new(0, Label.TextBounds.X, 1, 0);
+            end;
+        }
+
+        OBJECT.set(Data.Text)
+        
+		local Tweens = {
+			[true] = AK_CREATE_TWEEN(
+				{ Label, Theme.BaseTweenInfo, { TextTransparency = 0 } }
+			);
+			[false] = AK_CREATE_TWEEN(
+				{ Label, Theme.BaseTweenInfo, { TextTransparency = 0.3 } }
+			);
+		}
+
+		Connections:connect(self.Hovering.Event, function(Value)
+			AK_PLAY_TWEEN(Tweens, Value)
+		end)
+
+        return OBJECT;
+    end
+ 
+    function AK_OBJECTS:Information(Data: AK_ITEM_INFORMATION): AK_OBJECT_INFORMATION
+        local OwnerTab: AK_TAB = self.Owner.Owner;
+        local Skeleton = OwnerTab.Objects.Main.Skeleton;
+        local Theme = OwnerTab.Owner.Theme;
+        local Connections = self.Connections;
+
+        local TweenInfo1 = TweenInfo.new(0.1, Enum.EasingStyle.Quad)
+		local TweenInfo2 = TweenInfo.new(0.2, Enum.EasingStyle.Quad)
+
+		local Label: TextLabel = AK_CREATE("TextLabel", {
+			FontFace = Theme.Font_Regular;
+			Text = "(?)";
+			TextColor3 = Data.Color or Color3.new(1, 1, 1);
+			TextScaled = true;
+			TextSize = 16;
+			TextTransparency = 0.5;
+			TextWrapped = true;
+			TextXAlignment = Enum.TextXAlignment.Left;
+			AnchorPoint = Vector2.new(0, 0.5);
+			BackgroundColor3 = Color3.new(1, 1, 1);
+			BackgroundTransparency = 1;
+			Position = UDim2.new(0.118, 0, 0.5, 0);
+			Size = UDim2.new(1, 0, 1, -2);
+			Name = "Label";
+			Parent = self.Container;
+			LayoutOrder = Data.LayoutOrder;
+
+            AK_CREATE("UIAspectRatioConstraint", {
+                AspectType = Enum.AspectType.ScaleWithParentSize;
+                DominantAxis = Enum.DominantAxis.Height;
+            });
+		})
+
+        local InformationFrame = AK_CREATE("Frame", {
+            BackgroundColor3 = Theme.BackgroundDark;
+            Position = UDim2.new(0, 93, 0, 335);
+            Size = UDim2.new(0, 250, 0, 0);
+            ZIndex = 19;
+            Name = "InformationFrame";
+            BackgroundTransparency = 1;
+            Parent = Skeleton;
+            -- ClipsDescendants should be set to false to allow text to overflow outside the frame
+            ClipsDescendants = false;  
+
+            AK_CREATE("UIStroke", {
+                Color = Theme.Accent;
+                Transparency = 1;
+            });
+            AK_CREATE("UICorner", {
+                CornerRadius = UDim.new(0, 4);
+            });
+            AK_CREATE("TextLabel", {
+                FontFace = Theme.Font_Regular;
+                RichText = true;
+                TextColor3 = Color3.new(1, 1, 1);
+                TextSize = 16;
+                TextWrapped = true;
+                TextXAlignment = Enum.TextXAlignment.Left;
+                TextYAlignment = Enum.TextYAlignment.Top;
+                BackgroundColor3 = Color3.new(1, 1, 1);
+                BackgroundTransparency = 1;
+                Position = UDim2.new(0, 5, 0, 5);
+                Size = UDim2.new(1, -10, 1, -10);
+                ZIndex = 20;
+                Text = Data.Text;
+                Name = "Label";
+                TextTransparency = 1;
+                -- ClipsDescendants set to false for the label as well
+                ClipsDescendants = false;
+            });
+        })
+
+        local InformationLabel: TextLabel = AK_INSTANCE_FROM_PATH(InformationFrame, "Label")
+        --Skeleton.ClipsDescendants = false  -- Add this to ensure the Skeleton does not clip contents
+
+        local Tweens = {
+			Hover = AK_CREATE_TWEEN(
+				{ Label, TweenInfo1, { TextTransparency = 0 } },
+				{ InformationLabel, TweenInfo2, { TextTransparency = 0 } },
+				{ InformationFrame.UIStroke, TweenInfo2, { Transparency = 0 } },
+				{ InformationFrame, TweenInfo2, { BackgroundTransparency = 0 } }
+			);
+			Normal = AK_CREATE_TWEEN(
+				{ Label, TweenInfo1, { TextTransparency = 0.5 } },
+				{ InformationLabel, TweenInfo2, { TextTransparency = 1 } },
+				{ InformationFrame.UIStroke, TweenInfo2, { Transparency = 1 } },
+				{ InformationFrame, TweenInfo2, { BackgroundTransparency = 1 } }
+			);
+		}
+        local SizeX = math.clamp(InformationLabel.TextBounds.X + 10, 0, 250)
+
+        local function UpdateSize()
+            local SizeY = InformationLabel.TextBounds.Y + 10
+
+			InformationFrame.Position = AK_SUBTRACT_VECTORS_TO_UDIM2(Label.AbsolutePosition + Vector2.new(15, 15), Skeleton.AbsolutePosition)
+			InformationFrame:TweenSize( UDim2.new(0, SizeX, 0, SizeY), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        end
+
+		Connections:connect(Label.MouseEnter, function()
+			UpdateSize()
+			AK_PLAY_TWEEN(Tweens, "Hover")
+		end)
+
+		Connections:connect(Label.MouseLeave, function()
+			InformationFrame:TweenSize(UDim2.new(0, SizeX, 0, 0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.15, true)
+			AK_PLAY_TWEEN(Tweens, "Normal")
+		end)
+
+        local OBJECT : AK_OBJECT_INFORMATION = {
+            Identifier = "INFORMATION";
+            Flag = Data.Flag;
+
+            get = function()
+                return InformationLabel.Text
+            end;
+            set = function(new_text: string)
+                InformationLabel.Text = new_text
+                SizeX = math.clamp(InformationLabel.TextBounds.X + 10, 0, 250)
+                UpdateSize();
+            end;
+        }
+
+        return OBJECT;
+    end
+
+    function AK_OBJECTS:Dropdown(Data: AK_ITEM_DROPDOWN): AK_OBJECT_DROPDOWN
+        local OwnerTab: AK_TAB = self.Owner.Owner;
+        local Skeleton = OwnerTab.Objects.DropdownSkeleton;
+        local Theme = OwnerTab.Owner.Theme;
+        local Connections = self.Connections;
+
+        --// Create Dropdown Object
+        local DropdownObject: Frame = AK_CREATE("Frame", {
+			AnchorPoint = Vector2.new(0, 0.5);
+			BackgroundColor3 = Theme.BackgroundDark;
+			BorderSizePixel = 0;
+			Position = UDim2.new(0.076, 67, 0.45, 0);
+			Size = UDim2.new(0, 129, 0, 18);
+			Name = "DropdownObject";
+			Parent = self.Container;
+			LayoutOrder = Data.LayoutOrder;
+
+            AK_CREATE("TextButton", {
+                FontFace = Theme.Font_Regular;
+                Text = "";
+                TextColor3 = Color3.new(0, 0, 0);
+                TextSize = 14;
+                BackgroundTransparency = 1;
+                Size = UDim2.new(1, 0, 1, 0);
+                ZIndex = 3;
+            });
+            AK_CREATE("UICorner", {
+                CornerRadius = UDim.new(0, 4);
+            });
+            AK_CREATE("UIStroke", {
+                Color = Theme.Accent;
+            });
+            AK_CREATE("TextLabel", {
+                FontFace = Theme.Font_Regular;
+                Text = Data.Text;
+                TextColor3 = Color3.new(1, 1, 1);
+                TextSize = 16;
+                TextStrokeColor3 = Theme.BackgroundDark;
+                TextStrokeTransparency = 0;
+                TextXAlignment = Enum.TextXAlignment.Left;
+                BackgroundTransparency = 1;
+                Position = UDim2.new(0, 3, 0, 0);
+                Size = UDim2.new(1, -20, 1, 0);
+                ZIndex = 2;
+                Name = "Label";
+                ClipsDescendants = true;
+
+                AK_CREATE("UIGradient", {
+                    Enabled = false;
+                    Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0, 0), NumberSequenceKeypoint.new(0.699999988079071, 0, 0), NumberSequenceKeypoint.new(0.9990000128746033, 0.9998999834060669, 0), NumberSequenceKeypoint.new(1, 0, 0)});
+                    Name = "TransparencyGradient";
+                });
+            });
+            AK_CREATE("TextLabel", {
+                FontFace = Theme.Font_Regular;
+                Text = "˄";
+                TextColor3 = Color3.new(1, 1, 1);
+                TextSize = 14;
+                AnchorPoint = Vector2.new(1, 0);
+                BackgroundTransparency = 1;
+                Position = UDim2.new(1, 0, 0, 0);
+                Size = UDim2.new(0.14, 0, 1, 0);
+                Name = "Indicator";
+
+                AK_CREATE("UIAspectRatioConstraint", {
+                    AspectType = Enum.AspectType.ScaleWithParentSize;
+                    DominantAxis = Enum.DominantAxis.Height;
+                });        
+            });    
+		})		
+
+        local Trigger: TextButton = AK_INSTANCE_FROM_PATH(DropdownObject, "TextButton");
+        local UIStroke: UIStroke = AK_INSTANCE_FROM_PATH(DropdownObject, "UIStroke");
+        local Label: TextLabel = AK_INSTANCE_FROM_PATH(DropdownObject, "Label");
+        local TransparencyGradient: UIGradient = AK_INSTANCE_FROM_PATH(Label, "TransparencyGradient");
+        local Indicator: TextLabel = AK_INSTANCE_FROM_PATH(DropdownObject, "Indicator");
+
+        --// Create Dropdown Holder
+        local ListObject = AK_CREATE("Frame", {
+			BackgroundColor3 = Theme.BackgroundDark;
+			Position = UDim2.new(0, 0, 0, 0);
+			Size = UDim2.new(0, 210, 0, 0);
+			ZIndex = 5;
+			BorderSizePixel = 0;
+			Name = "Items";
+            Parent = Skeleton;
+
+            AK_CREATE("UIStroke", {
+                Color = Theme.Accent;
+                Transparency = 1;
+            });
+            AK_CREATE("UICorner", {
+                CornerRadius = UDim.new(0, 4);
+            });
+            AK_CREATE("ScrollingFrame", {
+                BottomImage = "";
+                CanvasSize = UDim2.new(1, 0, 0, 0);
+                ScrollBarImageColor3 = Theme.Accent;
+                ScrollBarThickness = 3;
+                TopImage = "";
+                VerticalScrollBarInset = Enum.ScrollBarInset.Always;
+                Active = true;
+                BackgroundTransparency = 1;
+                BorderSizePixel = 0;
+                Size = UDim2.new(1, 0, 1, 0);
+                ZIndex = 6;
+                Name = "Holder";
+    
+                AK_CREATE("UIListLayout", {
+                    HorizontalAlignment = Enum.HorizontalAlignment.Center;
+                    SortOrder = Enum.SortOrder.LayoutOrder;
+                    Padding = UDim.new(0,5);
+                });
+                AK_CREATE("UIPadding", {
+                    PaddingTop = UDim.new(0, 5);
+                });
+            });
+		})
+        local ItemHolder: ScrollingFrame = AK_INSTANCE_FROM_PATH(ListObject, "Holder");
+
+        local ToggleDropdown: (value: boolean) -> nil;
+
+        local SelectedItems = setmetatable({} :: array<any>, { __mode = "kv" })
+        local CurrentButtons: array<AK_OBJECT_DROPDOWN_BUTTON> = AK_LOAD_DROPDOWN_ITEMS(ItemHolder, Data.Items, Data, Theme, function(Value: any, Selected: boolean)
+            local SelectMultiple = Data.SelectMultiple
+            if (SelectMultiple) then
+                self.Callback({
+                    Identifier = "DROPDOWN";
+                    Flag = Data.Flag;
+                    Selected = Selected;
+                    Value = Value;
+                } :: AK_DATA_DROPDOWN)
+
+                if Selected then
+                    table.insert(SelectedItems, Value)
+                else
+                    local Idx = table.find(SelectedItems, Value)
+                    print("Removing", Idx)
+                    table.remove(SelectedItems, Idx)
+                end
+            else
+                self.Callback({
+                    Identifier = "DROPDOWN";
+                    Flag = Data.Flag;
+                    Selected = true;
+                    Value = Value;
+                } :: AK_DATA_DROPDOWN)
+                SelectedItems[1] = Value
+			end
+
+
+            local Text, Count = AK_CONCAT_TABLE(SelectedItems, ", ", true);
+
+            if (Count > 0) then
+				Label.TextTransparency = 0 
+				Label.Text = Text
+            else
+				Label.TextTransparency = 0.4
+				Label.Text = Data.Text
+            end
+
+			TransparencyGradient.Enabled = Label.TextBounds.X > Label.AbsoluteSize.X
+            
+			if Data.CloseAfterSelection then
+				ToggleDropdown(false)
+			end
+        end)
+
+		local DropdownState = "Normal"
+		local IsOpen = false
+
+		local Tweens = {
+			Normal = AK_CREATE_TWEEN(
+				{ Label, Theme.BaseTweenInfo, { TextTransparency = 0.5 } },
+				{ UIStroke, Theme.BaseTweenInfo, { Transparency = 0.6 } }
+			);
+			Hover = AK_CREATE_TWEEN(
+				{ Label, Theme.BaseTweenInfo, { TextTransparency = 0.3 } },
+				{ UIStroke, Theme.BaseTweenInfo, { Transparency = 0.4 } }
+			);
+			Pressing = AK_CREATE_TWEEN(
+				{ Label, Theme.BaseTweenInfo, { TextTransparency = 0.1 } },
+				{ UIStroke, Theme.BaseTweenInfo,  { Transparency = 0.2 } }
+			);
+			Open = AK_CREATE_TWEEN(
+				{ Label, Theme.BaseTweenInfo, { TextTransparency = 0 } },
+				{ UIStroke, Theme.BaseTweenInfo,  { Transparency = 0 } }
+			);
+		}
+
+        function ToggleDropdown(Value: boolean)
+            IsOpen = if (Value ~= nil) then Value else (not IsOpen)
+
+            local Size: Vector2 = AK_GET_DROPDOWN_SIZE(ItemHolder, DropdownObject);
+			Indicator.Text = AK_DROPDOWN_INDICATOR[IsOpen]
+
+			TweenService:Create(ListObject, TweenInfo.new(0.125), {
+				Size = IsOpen and UDim2.new(0, Size.X, 0, Size.Y) or UDim2.new(0, Size.X, 0, 0)
+			}):Play()
+
+			TweenService:Create(ListObject.UIStroke, TweenInfo.new(0.125), {
+				Transparency = IsOpen and 0 or 1
+			}):Play()
+
+			AK_PLAY_TWEEN(Tweens, IsOpen and "Open" or DropdownState)
+		end
+        
+        local OBJECT : AK_OBJECT_DROPDOWN = {
+            Identifier = "DROPDOWN";
+            Flag = Data.Flag;
+
+            get = function()
+                return Data.Items
+            end;
+            set = function(new_items: array<any>)
+                Data.Items = new_items
+            end;
+            refresh = function()
+                local Items = Data.Items
+                for Index: number, Button: AK_OBJECT_DROPDOWN_BUTTON in ipairs(CurrentButtons) do
+                    local KeepButton = table.find(Items, Button.m_value);
+                    if (KeepButton) then
+                        continue
+                    end
+
+                    Button:m_destructor();
+                end
+                return;
+            end;
+            toggle = function(value: boolean)
+                ToggleDropdown(value)
+            end;
+        }
+
+        Connections:connect(Trigger.MouseButton1Down, function()
+            AK_PLAY_TWEEN(Tweens, "Pressing")
+        end)
+    
+        Connections:connect(Trigger.MouseButton1Up, function()
+            ToggleDropdown()
+        end)
+
+		Connections:connect(Trigger.MouseEnter, function()
+			DropdownState = "Hover"
+			if IsOpen then
+                return
+            end
+
+			AK_PLAY_TWEEN(Tweens, DropdownState)
+		end)
+
+		Connections:connect(Trigger.MouseLeave, function()
+			DropdownState = "Normal"
+			if IsOpen then
+                return
+            end
+    
+			AK_PLAY_TWEEN(Tweens, DropdownState)
+		end)
+
+        Connections:connect(DropdownObject:GetPropertyChangedSignal("AbsolutePosition"), function()
+			local SkeletonPosition = Skeleton.AbsolutePosition
+			local ObjectPosition = DropdownObject.AbsolutePosition
+			ListObject.Position = UDim2.new(
+				0, math.round(ObjectPosition.X - SkeletonPosition.X),
+				0, math.round(ObjectPosition.Y - SkeletonPosition.Y) + DropdownObject.AbsoluteSize.Y + 5
+			)
+		end)
+    
+		ToggleDropdown(false)
+        TransparencyGradient.Enabled = Label.TextBounds.X > Label.AbsoluteSize.X;
+
+        return OBJECT
+    end
+ 
+    function AK_OBJECTS:getObjectFromFlag(Id: AK_ID, Flag: string): AK_OBJECT?
+        return self:m_getObject(Id, Flag)
+    end
+
+    function AK_OBJECTS:m_getObject(Id: AK_ID, Flag: string): AK_OBJECT?
+        for _, Object in ipairs(self.Objects) do
+            if Object.Identifier == Id and Object.Flag == Flag then
+                return Object
+            end
+        end
+        return nil;
+    end
+
+    function AK_OBJECTS:getObjects(): array<AK_OBJECT>
+        return self:m_getObjects();
+    end
+
+    function AK_OBJECTS:m_getObjects(): array<AK_OBJECT>
+        return self.Objects;
+    end
+
+    function AK_OBJECTS:m_registerObject(Object: AK_OBJECT): nil
+        table.insert(self.Objects, Object)
+        return;
+    end
+
+    function AK_OBJECTS:m_InstantiateObjects(): nil
+        local OwnerGroup = self.Owner;
+        local Theme = OwnerGroup.Owner.Owner.Theme;
+
+        self.Container = AK_CREATE("Frame", {
+			BackgroundColor3 = Theme.White;
+			BackgroundTransparency = 1;
+			Position = UDim2.new(-0.133, 0, 0.105, 0);
+			Size = UDim2.new(1, 0, 0, 20);
+			Name = "Object";
+			Parent = OwnerGroup.Objects.GroupContainer;
+
+            AK_CREATE("UIListLayout", {
+                Padding = UDim.new(0, 5);
+                FillDirection = Enum.FillDirection.Horizontal;
+                SortOrder = Enum.SortOrder.LayoutOrder;
+                VerticalAlignment = Enum.VerticalAlignment.Center;
+            });
+		})
+
+        self.Hovering = AK_CREATE("BindableEvent", {
+            Name = AK_RANDOM_STRING(16);
+        })
+
+        return;
+    end
+
+    function AK_OBJECTS:m_InitializeObjects(): nil
+        local Container = self.Container;
+        local Connections = self.Connections
+        
+		Connections:connect(Container.MouseEnter, function()
+			self.Hovering:Fire(true)
+		end)
+
+		Connections:connect(Container.MouseLeave, function()
+			self.Hovering:Fire(false)
+		end)
+
+        return;
+    end
+
+    function AK_OBJECTS:m_construct(): nil
+        self:m_InstantiateObjects();
+        self:m_InitializeObjects();
+
+        return;
+    end
+
+    function AK_OBJECTS.new(ObjectsOwner: AK_GROUP, Callback: AK_OBJECT_CALLBACK): AK_OBJECTS_IMPL
+        local self = setmetatable({
+            Callback = Callback;
+            Owner = ObjectsOwner;
+            Connections = AK_CONNECTION_OWNER.new();
+            Objects = {};
+        }, AK_OBJECTS);
+
+        self:m_construct();
+
+        return self :: AK_OBJECTS_IMPL;
+    end
+end
+
+--// Group Class
+local AK_GROUP = {} :: AK_GROUP_IMPL do
+    AK_GROUP.__index = AK_GROUP
+
+    function AK_GROUP:addObject(Callback: AK_OBJECT_CALLBACK, Items: array<AK_ITEM>): AK_OBJECTS_IMPL
+        Callback = (Callback or print)
+
+        local Objects = AK_OBJECTS.new(self, Callback);
+
+        for Index, Item in ipairs(Items) do
+            if (not Item.LayoutOrder) then
+                Item.LayoutOrder = Index
+            end
+
+            local Object: AK_OBJECT? = Objects[Item.Type](Objects, Item);
+            if Object then
+                Objects:m_registerObject(Object)
+            end
+        end
+
+        self:m_adjustCanvas()
+
+        return Objects;
+    end
+
+    function AK_GROUP:m_adjustCanvas(): nil
+        local Container = self.Objects.GroupContainer;
+        local GroupFrame = self.Objects.GroupFrame;
+
+        local Objects = Container:GetChildren()
+		local ObjectCount = #Objects
+        
+        local GroupboxY = 15 + (ObjectCount * 20) + (ObjectCount - 1) * 5;
+        local CanvasX = 0;
+
+        local ItemCount = 0;
+        for _, Item in ipairs(Objects) do
+			if (not Item:IsA("Frame")) then
+				continue
+			end
+            local Size, Count = AK_SUM_GUI_SIZE(Item:GetChildren());
+            ItemCount += Count
+            CanvasX += Size.X
+		end
+
+		CanvasX = CanvasX + ((ItemCount - 1) * 5)
+
+		GroupFrame.Size = UDim2.new(1, -7, 0, GroupboxY)
+		Container.CanvasSize = UDim2.new(0, CanvasX, 0, 0)
+        return;
+    end
+
+    function AK_GROUP:m_InstantiateObjects():  nil
+        local Theme = self.Owner.Owner.Theme;
+        local TabObjects = self.Owner.Objects;
+        local TabSkeleton: Frame = (self.Side == "LEFT" and TabObjects.Left.Skeleton) or TabObjects.Right.Skeleton;
+        local TabContainer: Frame = (self.Side == "LEFT" and TabObjects.Left.Container) or TabObjects.Right.Container;
+
+		local GroupFrame: Frame = AK_CREATE("Frame", {
+			BackgroundColor3 = Theme.BackgroundLight;
+			BorderSizePixel = 0;
+			Position = UDim2.new(0, 23, 0, 16);
+			Size = UDim2.new(1, -7, 0, 35);
+			Name = "Groupbox";
+			ClipsDescendants = true,
+			Parent = TabContainer;
+
+            AK_CREATE("Frame", {
+                AnchorPoint = Vector2.new(0, 1);
+                BackgroundColor3 = Color3.new(1, 1, 1);
+                BackgroundTransparency = 1;
+                BorderSizePixel = 0;
+                Position = UDim2.new(0, 0, 1, 0);
+                Size = UDim2.new(1, 0, 0, 20);
+                Name = "ScrollBarArea";
+            });
+            AK_CREATE("UICorner", {});
+            AK_CREATE("UIStroke", {
+                Color = Theme.Accent;
+                Transparency = 0.9;
+            });
+            AK_CREATE("TextLabel", {
+                FontFace = Theme.Font_Regular;
+                Text = self.Title;
+                TextColor3 = Theme.White;
+                TextSize = 18;
+                TextXAlignment = Enum.TextXAlignment.Left;
+                BackgroundTransparency = 1;
+                Position = UDim2.new(0, 7, 0, 7);
+                Size = UDim2.new(1, -7, 0, 10);
+            });
+            AK_CREATE("ScrollingFrame", {
+                BottomImage = "";
+                TopImage = "";
+                CanvasSize = UDim2.new(0, 0, 0, 0);
+                ScrollBarImageColor3 = Theme.Accent;
+                ScrollBarThickness = 3;
+                VerticalScrollBarInset = Enum.ScrollBarInset.Always;
+                AnchorPoint = Vector2.new(0.5, 0);
+                BackgroundTransparency = 1;
+                BorderSizePixel = 0;
+                ClipsDescendants = false;
+                Position = UDim2.new(0.5, 0, 0, 25);
+                Size = UDim2.new(1, -20, 1, -35);
+                Name = "ItemHolder";
+
+                AK_CREATE("UIListLayout", {
+                    Padding = UDim.new(0, 5);
+                    HorizontalAlignment = Enum.HorizontalAlignment.Center;
+                    SortOrder = Enum.SortOrder.LayoutOrder;
+                });
+            });
+		})
+
+        local GroupContainer: ScrollingFrame = AK_INSTANCE_FROM_PATH(GroupFrame, "ItemHolder");
+        local GroupScrollSection: Frame  = AK_INSTANCE_FROM_PATH(GroupFrame, "ScrollBarArea");
+        local TitleLabel: TextLabel = AK_INSTANCE_FROM_PATH(GroupFrame, "TextLabel");
+        local UiStroke: UIStroke = AK_INSTANCE_FROM_PATH(GroupFrame, "UIStroke");
+
+        local Objects = self.Objects;
+        
+        Objects.GroupFrame = GroupFrame;
+        Objects.TabSkeleton = TabSkeleton;
+        Objects.GroupContainer = GroupContainer;
+        Objects.GroupScrollSection = GroupScrollSection;
+        Objects.TitleLabel = TitleLabel;
+        Objects.UiStroke = UiStroke;
+        return;
+    end
+    
+    function AK_GROUP:m_InitializeObjects(): nil
+        local Theme = self.Owner.Owner.Theme;
+        local TabObjects = self.Owner.Objects;
+        local Objects = self.Objects;
+        local Connections = self.Connections
+        local GroupContainer = Objects.GroupContainer
+
+        local Tweens = {
+			Hover = AK_CREATE_TWEEN(
+				{ Objects.TitleLabel, Theme.BaseTweenInfo, { TextTransparency = 0 } },
+				{ Objects.UiStroke, Theme.BaseTweenInfo, { Transparency = 0.4 } }
+			);
+			Normal = AK_CREATE_TWEEN(
+				{ Objects.TitleLabel, Theme.BaseTweenInfo, { TextTransparency = 0.3 } },
+				{ Objects.UiStroke, Theme.BaseTweenInfo, { Transparency = 0.9 } }
+			);
+			ScrollHover = AK_CREATE_TWEEN(
+                { Objects.GroupContainer, Theme.BaseTweenInfo, { ScrollBarThickness = 4 } }
+            );
+			ScrollNormal = AK_CREATE_TWEEN(
+                { Objects.GroupContainer, Theme.BaseTweenInfo, { ScrollBarThickness = 1 } }
+            );
+		};
+
+		local LastSizeChange = tick();
+        Connections:connect(TabObjects.Main.Container:GetPropertyChangedSignal("AbsoluteSize"), function()
+			LastSizeChange = tick();
+		end);
+
+        Connections:connect(RunService.RenderStepped, function()
+			local LastChangeDelta = tick() - LastSizeChange;
+			GroupContainer.ScrollBarImageTransparency = (LastChangeDelta > 0.5 and 0) or 1;
+		end);
+        
+
+        Connections:connect(Objects.GroupScrollSection.MouseEnter, function()
+			AK_PLAY_TWEEN(Tweens, "ScrollHover");
+		end);
+        
+        Connections:connect(Objects.GroupScrollSection.MouseLeave, function()
+			AK_PLAY_TWEEN(Tweens, "ScrollNormal");
+		end);
+
+        Connections:connect(Objects.GroupFrame.MouseEnter, function()
+			AK_PLAY_TWEEN(Tweens, "Hover");
+        end);
+
+        Connections:connect(Objects.GroupFrame.MouseLeave, function()
+			AK_PLAY_TWEEN(Tweens, "Normal");
+        end);
+
+		AK_PLAY_TWEEN(Tweens, "Normal")
+
+        return;
+    end
+
+    function AK_GROUP:m_construct(): nil
+        self:m_InstantiateObjects(); 
+        self:m_InitializeObjects();
+        return;
+    end
+
+    function AK_GROUP.new(GroupOwner: AK_TAB, GroupSettings: AK_GROUP_SETTINGS): AK_GROUP_IMPL
+        local self = setmetatable({
+            Owner = GroupOwner;
+            Title = GroupSettings.Title;
+            Side = GroupSettings.Side;
+            Connections = AK_CONNECTION_OWNER.new();
+            Objects = {};
+            Id = GroupSettings.Id;
+        }, AK_GROUP);
+
+        self:m_construct();
+
+        return self :: AK_GROUP_IMPL;
+    end
+end
+
+--// Tab Class
+local AK_TAB = {} :: AK_TAB_IMPL do
+    AK_TAB.__index = AK_TAB
+
+    function AK_TAB:GroupBox(Settings: AK_GROUP_SETTINGS): AK_GROUP_IMPL
+        local Group = AK_GROUP.new(self :: AK_TAB, Settings);
+        table.insert(self.Groups, Group)
+        return Group
+    end
+
+    function AK_TAB:getGroups(): array<AK_GROUP_IMPL>
+        return self:m_getGroups()
+    end
+
+    function AK_TAB:m_getGroups(): array<AK_GROUP_IMPL>
+        return self.Groups
+    end
+
+    function AK_TAB:m_setVisible(Value: boolean): nil
+        local Objects = self.Objects;
+        local MContainer = Objects.Main.Container;
+
+		if Value then
+			if (self.IsVisible) then 
+				return
+			end
+
+			if self.Owner.CurrentTab then
+				self.Owner.CurrentTab:m_setVisible(false)
+			end
+
+			self.IsVisible = Value
+			MContainer.Visible = Value
+
+			self.Owner.CurrentTab = self
+
+			AK_PLAY_TWEEN(self.Tweens, "Enabled")
+
+			MContainer.Position = UDim2.new(0, 10, 0.5, 0)
+			self.Tweens.Show:Play()
+		else
+			MContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+			self.ButtonState = "Normal"
+			AK_PLAY_TWEEN(self.Tweens, "Normal")
+
+			self.Tweens.Hide:Play()
+
+			MContainer.Visible = false
+			self.IsVisible = false
+		end
+
+        return;
+    end
+
+    function AK_TAB:m_InstantiateObjects(): nil
+        local OwnerObjects = self.Owner.Objects;
+        local Theme = self.Owner.Theme;
+        
+        local Container: ScrollingFrame = AK_CREATE("ScrollingFrame", {
+            ScrollBarImageColor3 = Color3.new(0, 0, 0);
+            ScrollBarThickness = 0;
+            AnchorPoint = Vector2.new(0.5, 0.5);
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0.5, 0, 0.5, 0);
+            Size = UDim2.new(1, -20, 1, -20);
+            Name = "Container";
+            Parent = OwnerObjects.MainSection;
+
+            --// Left Container
+            AK_CREATE("Frame", {
+                BackgroundTransparency = 1;
+                BorderSizePixel = 0;
+                Size = UDim2.new(0.5, 0, 1, 0);
+                Name = "LContainer";
+
+                AK_CREATE("UIListLayout", {
+                    Padding = UDim.new(0, 10);
+                    HorizontalAlignment = Enum.HorizontalAlignment.Center;
+                    SortOrder = Enum.SortOrder.LayoutOrder;
+                });
+
+                AK_CREATE("UIPadding", {
+                    PaddingTop = UDim.new(0, 1);
+                });
+            });
+
+            --// Right Container
+            AK_CREATE("Frame", {
+                AnchorPoint = Vector2.new(1, 0);
+                BackgroundTransparency = 1;
+                BorderSizePixel = 0;
+                Position = UDim2.new(1, 0, 0, 0);
+                Size = UDim2.new(0.5, 0, 1, 0);
+                Name = "RContainer";
+
+                AK_CREATE("UIListLayout", {
+                    Padding = UDim.new(0, 10);
+                    HorizontalAlignment = Enum.HorizontalAlignment.Center;
+                    SortOrder = Enum.SortOrder.LayoutOrder;
+                });
+                AK_CREATE("UIPadding", {
+                    PaddingTop = UDim.new(0, 1);
+                });
+            });
+        })
+
+        local SkeletonSection: Frame = AK_CREATE("Frame", {
+            BackgroundColor3 = Color3.new(1, 1, 1);
+            BackgroundTransparency = 1;
+            ZIndex = 10;
+            Name = "TabSkeleton";
+            Parent = OwnerObjects.SkeletonSection;
+            ClipsDescendants = false,
+
+            AK_CREATE("Frame", {
+                Name = "DropdownSkeleton";
+                BackgroundColor3 = Color3.new(1, 1, 1);
+                BackgroundTransparency = 1;
+                ZIndex = 10;
+                ClipsDescendants = true,
+                Size = UDim2.new(1, 0, 1, 0);
+                Position = UDim2.new(0, 0, 0, 0);
+            });
+            AK_CREATE("Frame", {
+                BackgroundColor3 = Color3.new(1, 1, 1);
+                BackgroundTransparency = 1;
+                ZIndex = 10;
+                Name = "LSkeleton";
+                ClipsDescendants = true,
+            });
+            AK_CREATE("Frame", {
+                BackgroundColor3 = Color3.new(1, 1, 1);
+                BackgroundTransparency = 1;
+                ZIndex = 10;
+                Name = "RSkeleton";
+                ClipsDescendants = true,
+            });
+        })
+
+        local Button: TextButton = AK_CREATE("TextButton", {
+            FontFace = Theme.Font_Regular;
+            Text = "";
+            TextColor3 = Color3.new(0, 0, 0);
+            TextSize = 14;
+            AutoButtonColor = false;
+            BackgroundColor3 = Theme.BackgroundDark;
+            Position = UDim2.new(0.178, 0, 0, 0);
+            Size = UDim2.new(1, -20, 0, 25);
+            Name = "Button";
+            Parent = OwnerObjects.SideContainer;
+
+            AK_CREATE("UIStroke", {
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+                Color = Theme.Accent;
+            });
+            AK_CREATE("UICorner", {
+                CornerRadius = UDim.new(0, 4);
+            });
+            AK_CREATE("Frame", {
+                BackgroundTransparency = 1;
+                Size = UDim2.new(1, 0, 1, 0);
+                Name = "IconContainer";
+
+                AK_CREATE("UIAspectRatioConstraint", {
+                    AspectType = Enum.AspectType.ScaleWithParentSize;
+                    DominantAxis = Enum.DominantAxis.Height;
+                });
+                AK_CREATE("ImageLabel", {
+                    Image = self.Icon or "rbxassetid://10403490626";
+                    AnchorPoint = Vector2.new(0.5, 0.5);
+                    BackgroundTransparency = 1;
+                    Position = UDim2.new(0.5, 0, 0.5, 0);
+                    Size = UDim2.new(1, -4, 1, -4);
+                    Name = "Icon";
+                });
+            });
+            AK_CREATE("TextLabel", {
+                FontFace = Theme.Font_Regular;
+                RichText = true;
+                Text = self.Title;
+                TextColor3 = Theme.White;
+                TextSize = 16;
+                TextWrapped = true;
+                TextXAlignment = Enum.TextXAlignment.Left;
+                AnchorPoint = Vector2.new(0, 0.5);
+                BackgroundTransparency = 1;
+                Position = UDim2.new(0, 27, 0.5, 0);
+                Size = UDim2.new(1, -27, 1, 0);
+                Name = "Label";
+            });
+        })
+
+        local Objects = self.Objects;
+        Objects.UiStroke = AK_INSTANCE_FROM_PATH(Button, "UIStroke");
+
+        Objects.Button = {
+            Object = Button;
+            Title = AK_INSTANCE_FROM_PATH(Button, "Label");
+            Icon = AK_INSTANCE_FROM_PATH(Button, "IconContainer", "Icon");
+        };
+        Objects.Left = {
+            Skeleton = AK_INSTANCE_FROM_PATH(SkeletonSection, "LSkeleton");
+            Container = AK_INSTANCE_FROM_PATH(Container, "LContainer");
+        };
+        Objects.Right = {
+            Skeleton = AK_INSTANCE_FROM_PATH(SkeletonSection, "RSkeleton");
+            Container = AK_INSTANCE_FROM_PATH(Container, "RContainer");
+        };
+        Objects.Main = {
+            Skeleton = SkeletonSection;
+            Container = Container;
+        };
+        Objects.DropdownSkeleton = AK_INSTANCE_FROM_PATH(SkeletonSection, "DropdownSkeleton")
+
+        return;
+    end
+
+    function AK_TAB:m_InitializeObjects(): nil
+        local Theme = self.Owner.Theme;
+        local Objects = self.Objects;
+        local Connections = self.Connections;
+        local Button = Objects.Button;
+
+        self.Tweens = {
+			Hide = TweenService:Create(Objects.Main.Container, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+				Size = UDim2.new(0,0,1,-20),
+				Position = UDim2.new(1,-10,0.5,0)
+			});
+			Show = TweenService:Create(Objects.Main.Container, TweenInfo.new(0.25, Enum.EasingStyle.Quad), { 
+				Size = UDim2.new(1,-20,1,-20),
+				Position = UDim2.new(0.5,0,0.5,0)
+			});
+            Hover = AK_CREATE_TWEEN(
+                { Objects.UiStroke, Theme.BaseTweenInfo, { Transparency = 0.4 } },
+                { Button.Icon, Theme.BaseTweenInfo, { ImageTransparency = 0.35 } },
+                { Button.Title, Theme.BaseTweenInfo, { TextTransparency = 0.35 } }
+            );
+            Normal = AK_CREATE_TWEEN(
+                { Objects.UiStroke, Theme.BaseTweenInfo, { Transparency = 0.6 } },
+                { Button.Icon, Theme.BaseTweenInfo, { ImageTransparency = 0.5 } },
+                { Button.Title, Theme.BaseTweenInfo, { TextTransparency = 0.5 } }
+            );
+            Pressing = AK_CREATE_TWEEN(
+                { Objects.UiStroke, Theme.BaseTweenInfo, { Transparency = 0.25 } },
+                { Button.Icon, Theme.BaseTweenInfo, { ImageTransparency = 0 } },
+                { Button.Title, Theme.BaseTweenInfo, { TextTransparency = 0 } }
+            );
+            Enabled = AK_CREATE_TWEEN(
+                { Objects.UiStroke, Theme.BaseTweenInfo, { Transparency = 0 } },
+                { Button.Icon, Theme.BaseTweenInfo, { ImageTransparency = 0 } },
+                { Button.Title, Theme.BaseTweenInfo, { TextTransparency = 0 } }
+            );
+		}
+
+        local LSkeleton, RSkeleton, MSkeleton = Objects.Left.Skeleton, Objects.Right.Skeleton, Objects.Main.Skeleton
+        local LContainer, RContainer, MContainer = Objects.Left.Container, Objects.Right.Container, Objects.Main.Container
+
+        local function UpdateSkeletonPosition()
+            local MAbsolutePosition = MContainer.AbsolutePosition
+
+            LSkeleton.Size = AK_VECTOR2_TO_UDIM2(LContainer.AbsoluteSize)
+            LSkeleton.Position = AK_VECTOR2_TO_UDIM2(LContainer.AbsolutePosition - MAbsolutePosition)
+
+            RSkeleton.Size = AK_VECTOR2_TO_UDIM2(RContainer.AbsoluteSize)
+            RSkeleton.Position = AK_VECTOR2_TO_UDIM2(RContainer.AbsolutePosition - MAbsolutePosition)
+
+			MSkeleton.Size = AK_VECTOR2_TO_UDIM2(MContainer.AbsoluteSize)
+			MSkeleton.Position = AK_VECTOR2_TO_UDIM2(MAbsolutePosition)
+        end
+
+        Connections:connect(Button.Object.MouseButton1Down, function()
+			if self.IsVisible then
+				return
+			end
+
+			AK_PLAY_TWEEN(self.Tweens, "Pressing")
+        end)
+
+        Connections:connect(Button.Object.MouseButton1Up, function()
+			if self.IsVisible then
+				return
+			end
+
+			AK_PLAY_TWEEN(self.Tweens, "Enabled")
+			self:m_setVisible(true)
+        end)
+
+        Connections:connect(Button.Object.MouseEnter, function()
+			if self.IsVisible then
+				return
+			end
+
+			self.ButtonState = "Hover"
+			AK_PLAY_TWEEN(self.Tweens, "Hover")
+        end)
+
+        Connections:connect(Button.Object.MouseLeave, function()
+			if self.IsVisible then
+				return
+			end
+
+			self.ButtonState = "Normal"
+			AK_PLAY_TWEEN(self.Tweens, "Normal")
+        end)
+
+        Connections:connect(MContainer:GetPropertyChangedSignal("AbsolutePosition"), UpdateSkeletonPosition)
+        Connections:connect(MContainer:GetPropertyChangedSignal("AbsoluteSize"), UpdateSkeletonPosition)
+        
+        return;
+    end
+
+    function AK_TAB:m_construct(): nil
+        self:m_InstantiateObjects(); 
+        self:m_InitializeObjects();
+
+        if (self.Owner.CurrentTab) then
+			self:m_setVisible(false)
+		else
+			self.Owner.CurrentTab = self
+			self:m_setVisible(true)
+		end
+
+        return;
+    end
+
+    function AK_TAB.new(TabOwner: AK_LIBRARY, TabSettings: AK_TAB_SETTINGS): AK_TAB_IMPL
+        local self = setmetatable({
+            Owner = TabOwner;
+            Objects = {};
+            ButtonState = "Normal";
+            Connections = AK_CONNECTION_OWNER.new();
+            Groups = {};
+            Id = TabSettings.Id;
+        }, AK_TAB);
+
+        self:m_construct();
+        
+        return self :: AK_TAB_IMPL;
+    end
+end
+
+--// Library Class
+local AK_LIBRARY = {} :: AK_LIBRARY_IMPL do
+    AK_LIBRARY.__index = AK_LIBRARY
+
+    function AK_LIBRARY:m_InstantiateObjects(): nil
+        local Theme = self.Theme;
+        local Objects = self.Objects;
+
+        local AlaskaUI: ScreenGui = AK_CREATE("ScreenGui", {
+			Name = AK_RANDOM_STRING(16);
+            Parent = self.Parent;
+
+            AK_CREATE("Frame", {
+                BackgroundColor3 = Color3.new(1, 1, 1);
+                BackgroundTransparency = 1;
+                Size = UDim2.new(1, 0, 1, 0);
+                Name = "SkeletonSection";
+            });
+            AK_CREATE("Frame", {
+                BackgroundTransparency = 1;
+                BorderSizePixel = 0;
+                Position = UDim2.new(0.175, 0, 0.186, 0);
+                Size = UDim2.new(0, 850, 0, 650);
+                Name = "Container";
+                Draggable = true;
+                Active = true;
+
+                AK_CREATE("UIStroke", {
+                    Color = Theme.Accent;
+                    Transparency = 0.8;
+                });
+                AK_CREATE("Frame", {
+                    AnchorPoint = Vector2.new(1, 0);
+                    BackgroundColor3 = Theme.BackgroundMid;
+                    BorderSizePixel = 0;
+                    Position = UDim2.new(1, 0, 0, 0);
+                    Size = UDim2.new(0.714, 0, 0.106, 0);
+                    ZIndex = 0;
+                    Name = "Top";
+
+                    AK_CREATE("Frame", {
+                        AnchorPoint = Vector2.new(0.5, 1);
+                        BackgroundColor3 = Theme.Divider;
+                        BorderSizePixel = 0;
+                        Position = UDim2.new(0.5, 0, 1, 0);
+                        Size = UDim2.new(1, -10, 0, 1);
+                        Name = "Divider";
+                    });
+                    AK_CREATE("Frame", {
+                        AnchorPoint = Vector2.new(1, 0.5);
+                        BackgroundTransparency = 1;
+                        Position = UDim2.new(1, -15, 0.5, 0);
+                        Size = UDim2.new(0.5, 0, 1, -29);
+                        Name = "Container";
+                        
+                        AK_CREATE("UIListLayout", {
+                            Padding = UDim.new(0, 10);
+                            FillDirection = Enum.FillDirection.Horizontal;
+                            HorizontalAlignment = Enum.HorizontalAlignment.Right;
+                            SortOrder = Enum.SortOrder.LayoutOrder;
+                        });
+                    });
+                });
+                AK_CREATE("Frame", {
+                    BorderSizePixel = 0;
+                    Size = UDim2.new(0.287, 0, 1, 0);
+                    Name = "Side";
+
+                    AK_CREATE("Frame", {
+                        AnchorPoint = Vector2.new(0.5, 0.5);
+                        BackgroundColor3 = Theme.BackgroundMid;
+                        BorderSizePixel = 0;
+                        Position = UDim2.new(0.5, 0, 0.5, 0);
+                        Size = UDim2.new(1, 0, 1, 0);
+                        ZIndex = -5;
+                        Name = "Background";
+                    });
+                    AK_CREATE("ScrollingFrame", {
+                        ScrollBarImageColor3 = Color3.new(0, 0, 0);
+                        ScrollBarThickness = 0;
+                        Active = true;
+                        AnchorPoint = Vector2.new(0, 1);
+                        BackgroundTransparency = 1;
+                        Position = UDim2.new(0, 0, 1, 0);
+                        Size = UDim2.new(1, 0, 0.894, -8);
+                        ZIndex = 2;
+                        Name = "Container";
+
+                        AK_CREATE("UIListLayout", {
+                            Padding = UDim.new(0, 10);
+                            HorizontalAlignment = Enum.HorizontalAlignment.Center;
+                            SortOrder = Enum.SortOrder.LayoutOrder;
+                        });
+                        AK_CREATE("UIPadding", {
+                            PaddingTop = UDim.new(0, 5);
+                        });
+                    });
+                    AK_CREATE("Frame", {
+                        BackgroundTransparency = 1;
+                        BackgroundColor3 = Theme.BackgroundMid;
+                        Size = UDim2.new(1, 0, 0.106, 0);
+                        Name = "Top";
+                        BorderSizePixel = 0;
+
+                        AK_CREATE("Frame", {
+                            AnchorPoint = Vector2.new(0.5, 1);
+                            BackgroundColor3 = Theme.Divider;
+                            BorderSizePixel = 0;
+                            Position = UDim2.new(0.5, 0, 1, 0);
+                            Size = UDim2.new(1, -10, 0, 1);
+                            Name = "Divider";
+                        });
+                        AK_CREATE("Frame", {
+                            BackgroundTransparency = 1;
+                            Size = UDim2.new(1, 0, 1, 0);
+                            Name = "IconContainer";
+
+                            AK_CREATE("ImageLabel", {
+                                Image = self.Icon or "rbxassetid://10403490626";
+                                AnchorPoint = Vector2.new(0.5, 0.5);
+                                BackgroundTransparency = 1;
+                                Position = UDim2.new(0.5, 0, 0.5, 0);
+                                Size = UDim2.new(1, -10, 1, -10);
+                                Name = "Icon";
+
+                                AK_CREATE("TextLabel", {
+                                    Text = self.Title;
+                                    FontFace = Theme.Font_Bold;
+                                    RichText = true;
+                                    TextColor3 = Theme.White;
+                                    TextScaled = true;
+                                    TextSize = 18;
+                                    TextWrapped = true;
+                                    TextXAlignment = Enum.TextXAlignment.Left;
+                                    AnchorPoint = Vector2.new(0, 0.5);
+                                    BackgroundTransparency = 1;
+                                    Position = UDim2.new(1, 0, 0.5, 0);
+                                    Size = UDim2.new(0, 120, 0.401, 0);
+                                    Name = "Label";
+                                });
+                            });
+                            AK_CREATE("UIAspectRatioConstraint", {
+                                AspectType = Enum.AspectType.ScaleWithParentSize;
+                                DominantAxis = Enum.DominantAxis.Height;
+                            });              
+                        });
+                    });
+                    AK_CREATE("UIGradient", {
+                        Color = Theme.SideGradient;
+                        Offset = Vector2.new(-1.2, 0);
+                        Rotation = -45;
+                        Transparency = Theme.SideTransparency,
+                    });            
+                });
+                AK_CREATE("Frame", {
+                    AnchorPoint = Vector2.new(1, 1);
+                    BackgroundColor3 = Theme.BackgroundMid;
+                    BorderSizePixel = 0;
+                    Position = UDim2.new(1, 0, 1, 0);
+                    Size = UDim2.new(0.714, 0, 0.894, 0);
+                    Name = "Main";
+                    ClipsDescendants = true;
+                });
+            })
+        });
+
+        local Container: Frame = AK_INSTANCE_FROM_PATH(AlaskaUI, "Container");
+        local SideSection: Frame = AK_INSTANCE_FROM_PATH(Container, "Side");
+        local SideTopSection: Frame = AK_INSTANCE_FROM_PATH(SideSection, "Top");
+        local IconContainer: Frame = AK_INSTANCE_FROM_PATH(SideTopSection, "IconContainer");
+
+		Objects.AlaskaUI = AlaskaUI 
+		Objects.Container = Container
+		Objects.SkeletonSection = AK_INSTANCE_FROM_PATH(AlaskaUI, "SkeletonSection");
+		Objects.UiStroke = AK_INSTANCE_FROM_PATH(Container, "UIStroke");
+		Objects.MainSection = AK_INSTANCE_FROM_PATH(Container, "Main");
+		Objects.SideSection = SideSection
+		Objects.TopSection = AK_INSTANCE_FROM_PATH(Container, "Top");
+		Objects.SideContainer = AK_INSTANCE_FROM_PATH(SideSection, "Container");
+		Objects.SideBackground = AK_INSTANCE_FROM_PATH(SideSection, "Background");
+		Objects.SideDivider = AK_INSTANCE_FROM_PATH(SideTopSection, "Divider");
+		Objects.IconImage = AK_INSTANCE_FROM_PATH(IconContainer, "Icon");
+		Objects.TitleText = AK_INSTANCE_FROM_PATH(Objects.IconImage, "Label");
+		Objects.TopDivider = AK_INSTANCE_FROM_PATH(Objects.TopSection, "Divider");
+
+        return;
+    end
+
+    function AK_LIBRARY:m_InitializeObjects(): nil
+        local Theme = self.Theme;
+        local Objects = self.Objects;
+        local Connections = self.Connections;
+
+        local Tweens = {
+            Hover = AK_CREATE_TWEEN(
+                { Objects.TitleText, Theme.BaseTweenInfo, { TextTransparency = 0 } },
+				{ Objects.SideBackground, Theme.BaseTweenInfo, { Transparency = 0 } },
+				{ Objects.UiStroke, Theme.BaseTweenInfo, { Transparency = 0.4 } }
+            );
+			Normal = AK_CREATE_TWEEN(
+				{ Objects.TitleText, Theme.BaseTweenInfo, { TextTransparency = 0.5 } },
+				{ Objects.SideBackground, Theme.BaseTweenInfo, { Transparency = 1 } },
+				{ Objects.UiStroke, Theme.BaseTweenInfo, { Transparency = 0.8 } }
+			);
+			[false] = AK_CREATE_TWEEN(
+				{ Objects.TopSection, Theme.BaseTweenInfo, { BackgroundTransparency = 1 }  },
+				{ Objects.MainSection, Theme.BaseTweenInfo, { BackgroundTransparency = 1 }  },
+				{ Objects.SideDivider, Theme.BaseTweenInfo, { BackgroundTransparency = 1 }  },
+				{ Objects.TopDivider, Theme.BaseTweenInfo, { BackgroundTransparency = 1 }  },
+				{ Objects.SideContainer, Theme.BaseTweenInfo, { Size = UDim2.new(1,0,0,0) }  },
+				{ Objects.SideBackground, Theme.BaseTweenInfo, { Transparency = 1 } },
+				{ Objects.TitleText, Theme.BaseTweenInfo, { TextTransparency = 1 } },
+				{ Objects.IconImage, Theme.BaseTweenInfo, { ImageTransparency = 1 } },
+				{ Objects.SideSection, Theme.BaseTweenInfo, { BackgroundTransparency = 1 } },
+				{ Objects.UiStroke, Theme.BaseTweenInfo, { Transparency = 1 } }
+			);
+			[true] = AK_CREATE_TWEEN(
+				{ Objects.TopSection, Theme.BaseTweenInfo, { BackgroundTransparency = 0 }  },
+				{ Objects.MainSection, Theme.BaseTweenInfo, { BackgroundTransparency = 0 }  },
+				{ Objects.SideDivider, Theme.BaseTweenInfo, { BackgroundTransparency = 0 }  },
+				{ Objects.TopDivider, Theme.BaseTweenInfo, { BackgroundTransparency = 0 }  },
+				{ Objects.SideContainer, Theme.BaseTweenInfo, { Size = UDim2.new(1,0,0.894,-8) }  },
+				{ Objects.TitleText, Theme.BaseTweenInfo, { TextTransparency = 0 } },
+				{ Objects.IconImage, Theme.BaseTweenInfo, { ImageTransparency = 0 } },
+				{ Objects.SideSection, Theme.BaseTweenInfo, { BackgroundTransparency = 0 } },
+				{ Objects.UiStroke, Theme.BaseTweenInfo, { Transparency = 0.8 } }
+			);
+        }       
+        
+        Connections:connect(Objects.Container.MouseEnter, function()
+			if not self.IsVisible then 
+                return 
+            end
+
+			AK_PLAY_TWEEN(Tweens, "Hover")
+        end)
+
+        Connections:connect(Objects.Container.MouseLeave, function()
+			if not self.IsVisible then
+                return
+            end
+
+			AK_PLAY_TWEEN(Tweens, "Normal")
+        end)
+
+        AK_PLAY_TWEEN(Tweens, "Normal")
+
+        local ToggleKey = Enum.KeyCode.P
+		Connections:connect(UserInputService.InputBegan, function(Object: InputObject)
+			local Key = Object.KeyCode
+
+			if Key ~= ToggleKey then
+                return
+            end
+
+            self.IsVisible = not self.IsVisible
+            task.delay(
+                self.IsVisible and 0 or Theme.BaseTweenInfo.Time, 
+                function()
+                    Objects.AlaskaUI.Enabled = self.IsVisible
+                end
+            )
+
+            AK_PLAY_TWEEN(Tweens, self.IsVisible)
+		end)
+
+        return;
+    end
+
+    function AK_LIBRARY:m_construct(): nil
+        self:m_InstantiateObjects(); 
+        self:m_InitializeObjects();
+
+        local Connections = self.Connections;
+
+        Connections:connect(UserInputService.InputBegan, function(Input: InputObject, gameProcessed: boolean)
+            if gameProcessed then
+                return;
+            end
+            for _, KEYBIND in ipairs(self.Keybinds) do
+                if KEYBIND.get() == Input.KeyCode then
+                    KEYBIND.Event:Fire();
+                end
+            end
+        end)
+        return;
+    end
+
+    function AK_LIBRARY:createTab(Settings: AK_TAB_SETTINGS): AK_TAB_IMPL
+        return AK_TAB.new(self, Settings)
+    end
+
+    function AK_LIBRARY.new(Settings: AK_LIB_SETTINGS?): AK_LIBRARY_IMPL
+        local self = setmetatable({
+            Parent = Players.LocalPlayer:WaitForChild("PlayerGui");
+            Theme = (Settings and Settings.Theme) or AK_DEFAULT_THEME;
+            Objects = {} :: AK_CORE_OBJECTS;
+            Connections = AK_CONNECTION_OWNER.new();
+            IsVisible = true;
+
+            Title = Settings and Settings.Title;
+            Icon = Settings and Settings.Icon;
+            Keybinds = {};
+        }, AK_LIBRARY)
+        self:m_construct();
+        return self;
+    end
+end
+
+
+return AK_LIBRARY
